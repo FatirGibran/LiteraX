@@ -1,0 +1,8 @@
+[
+  "svm", "cnn", "rnn", "lstm", "bilstm", "gru", "gan", "bert", "gpt", "llm", "nlp", "rl",
+  "xgboost", "adaboost", "lightgbm", "catboost", "knn", "dbscan", "pca", "t-sne", "umap",
+  "iot", "5g", "6g", "rfid", "uav", "wsn", "api", "rest", "graphql", "crud",
+  "covid-19", "sars", "dna", "rna", "crispr", "mri", "ct", "eeg", "ecg",
+  "dos", "ddos", "mitm", "sql", "xss", "csrf", "ssl", "tls", "url", "uri", "ip", "dns",
+  "transformer", "distilbert", "roberta", "t5", "llama", "mistral"
+]
