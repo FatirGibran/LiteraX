@@ -1,0 +1,56 @@
+# 📑 Literature Matrix Generator
+
+The **Literature Matrix Generator** compiles research papers into structured comparative tables. This is one of the most critical steps in preparing an academic thesis, journal submission, or systematic literature review (SLR).
+
+---
+
+## 🎯 Purpose
+
+Manually creating literature review matrices in Microsoft Word or Excel takes hours of copy-pasting. LiteraX automates this by extracting standardized columns across papers and exporting them to Markdown, CSV, and Excel (`.xlsx`).
+
+---
+
+## 📊 Standard Matrix Schema
+
+| Column | Description | Extraction Source |
+| :--- | :--- | :--- |
+| **Paper / Citation** | First Author et al., Title, & Year | Crossref / Scopus Metadata |
+| **Year** | Publication Year | Metadata |
+| **Method / Model** | Algorithms, architectures, frameworks | Abstract / Methodology Section |
+| **Dataset** | Corpus name, sample volume, domain | Abstract / Experiment Section |
+| **Metrics & Results** | Accuracy, F1, Precision, latency | Abstract / Results Section |
+| **Limitations** | Declared hurdles, bias, scope limits | Discussion / Limitations Section |
+
+---
+
+## 💬 Interactive Matrix Generation Example
+
+### User Command
+```text
+/matrix session_phishing_detection
+```
+
+### Bot Output
+```markdown
+# 📚 Literature Review Matrix: Phishing Detection Using Machine Learning
+
+| Paper | Year | Method | Dataset | Key Results | Limitations |
+| :--- | :---: | :--- | :--- | :--- | :--- |
+| **Rahman & Kumar** | 2025 | Random Forest + XGBoost | PhishTank (40,000 URLs) | Accuracy: 95.8%, F1: 0.94 | Limited to lexical features; cannot detect zero-day payload |
+| **Chen et al.** | 2024 | BiLSTM + Self-Attention | Mendeley Cyber (65,000 URLs) | Accuracy: 97.4%, AUC: 0.98 | High memory usage; inference latency > 50ms |
+| **Santoso & Pratama** | 2023 | Support Vector Machine (SVM) | Indonesian Phishing Set (12,000 URLs) | Accuracy: 93.1%, Precision: 91.5% | Susceptible to obfuscation via URL shorteners |
+| **Al-Hussaini et al.** | 2023 | LightGBM + Graph Embeddings | Multi-host Graph (100,000 nodes) | Detection rate: 98.1% | Requires complete network topology graph |
+
+📥 **Download Matrix**: [📄 CSV Format] | [📊 Excel .xlsx] | [📋 Copy Markdown]
+```
+
+---
+
+## 📤 Export Utilities
+
+LiteraX provides native converters in `src/literax/matrix/exporter.py`:
+
+- **Markdown Export**: Direct markdown table formatted for GitHub READMEs, Obsidian, or Notion notes.
+- **CSV Export**: Standard UTF-8 comma-delimited table.
+- **Excel Export**: Formatted `.xlsx` file with auto-fitted column widths, bold headers, and wrapped text cells.
+- **LaTeX Table Export**: Pre-compiled `tabular` environment ready for direct inclusion into Overleaf/LaTeX manuscripts.
