@@ -16,19 +16,21 @@ router = Router()
 fuzzy_engine = FuzzyAutoCorrect()
 aggregator = PaperAggregator()
 
-# In-memory session cache for demonstration
+# In-memory session cache for demonstration: chat_id -> List[Paper]
 USER_SESSIONS = {}
 
 @router.message(Command("start"))
 async def cmd_start(message: types.Message):
     welcome_text = (
         "🔬 *Welcome to LiteraX — AI Research Automation Bot*\n\n"
-        "I can discover, analyze, and cite scientific papers from SINTA, Scopus, and global repositories.\n\n"
+        "I can discover, analyze, and cite scientific papers from SINTA, Scopus, OpenAlex, and Crossref.\n\n"
         "⚡ *Commands:*\n"
-        "• `/search <query>` — Search papers with auto-typo correction\n"
-        "• `/matrix <topic>` — Generate literature review matrix\n"
-        "• `/gap <topic>` — Synthesize potential research gaps\n"
-        "• `/cite <doi>` — Get formatted citation\n\n"
+        "• `/search <query>` — Search papers with multi-factor fuzzy auto-correction\n"
+        "• `/matrix <topic>` — Generate comparative literature review matrix\n"
+        "• `/gap <topic>` — Synthesize methodological and empirical research gaps\n"
+        "• `/cite <doi>` — Get formatted APA 7th and BibTeX citation\n"
+        "• `/save` — Bookmark the current paper to your collection\n"
+        "• `/saved` — View and export your saved papers (`/saved export bibtex`)\n\n"
         "_Example:_ `/search machne lerning untk deteksi phising`"
     )
     await message.reply(welcome_text, parse_mode=ParseMode.MARKDOWN)
@@ -53,11 +55,19 @@ async def cmd_search(message: types.Message):
         return
 
     search_term = correction.corrected_query if correction.action == "AUTO_CORRECTED" else raw_query
-    info_msg = ""
-    if correction.action == "AUTO_CORRECTED":
-        info_msg = f"🔎 *Corrected Query:* `{correction.corrected_query}` (Confidence: {int(correction.overall_confidence*100)}%)\n\n"
+    await execute_search(message, search_term, correction if correction.action == "AUTO_CORRECTED" else None)
 
-    status_msg = await message.reply(f"{info_msg}⚡ Searching OpenAlex, Scopus, Crossref, and SINTA...", parse_mode=ParseMode.MARKDOWN)
+async def execute_search(message: types.Message, search_term: str, correction=None, edit_message: types.Message | None = None):
+    info_msg = ""
+    if correction:
+        info_msg = f"🔎 *Corrected Query:* `{correction.corrected_query}` (Confidence: {int(correction.overall_confidence * 100)}%)\n\n"
+
+    prompt_text = f"{info_msg}⚡ Searching OpenAlex, Scopus, Crossref, and SINTA..."
+    if edit_message:
+        status_msg = edit_message
+        await edit_message.edit_text(prompt_text, parse_mode=ParseMode.MARKDOWN)
+    else:
+        status_msg = await message.reply(prompt_text, parse_mode=ParseMode.MARKDOWN)
 
     # Step 2: Multi-source search
     query_obj = SearchQuery(raw_query=search_term, limit=5)
@@ -67,7 +77,8 @@ async def cmd_search(message: types.Message):
         await status_msg.edit_text(f"{info_msg}❌ No papers found for `{search_term}`.", parse_mode=ParseMode.MARKDOWN)
         return
 
-    USER_SESSIONS[message.chat.id] = papers
+    chat_id = message.chat.id
+    USER_SESSIONS[chat_id] = papers
     await send_paper_result(message, papers, index=0, edit_message=status_msg)
 
 async def send_paper_result(message: types.Message, papers: list[Paper], index: int, edit_message: types.Message | None = None):
@@ -85,50 +96,11 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         f"📝 *Abstract:*\n_{abstract_preview}_\n"
     )
 
-    kb = get_paper_keyboard(paper.doi, index, len(papers))
+    kb = get_paper_keyboard(paper.doi or paper.id, index, len(papers))
     if edit_message:
         await edit_message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
     else:
         await message.reply(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
-
-@router.callback_query(F.data.startswith("nav_page:"))
-async def on_nav_page(callback: types.CallbackQuery):
-    idx = int(callback.data.split(":")[1])
-    papers = USER_SESSIONS.get(callback.message.chat.id, [])
-    if 0 <= idx < len(papers):
-        await send_paper_result(callback.message, papers, index=idx, edit_message=callback.message)
-    await callback.answer()
-
-@router.callback_query(F.data.startswith("act_cite:"))
-async def on_cite(callback: types.CallbackQuery):
-    doi = callback.data.split(":")[1]
-    papers = USER_SESSIONS.get(callback.message.chat.id, [])
-    target = next((p for p in papers if p.doi == doi), papers[0] if papers else None)
-    if target:
-        apa = CitationGenerator.to_apa(target)
-        bib = CitationGenerator.to_bibtex(target)
-        text = f"📖 *APA 7th:*\n`{apa}`\n\n📜 *BibTeX:*\n```bibtex\n{bib}\n```"
-        await callback.message.reply(text, parse_mode=ParseMode.MARKDOWN)
-    await callback.answer("Citation generated!")
-
-@router.callback_query(F.data.startswith("act_ana:"))
-async def on_analyze(callback: types.CallbackQuery):
-    doi = callback.data.split(":")[1]
-    papers = USER_SESSIONS.get(callback.message.chat.id, [])
-    target = next((p for p in papers if p.doi == doi), papers[0] if papers else None)
-    if target:
-        analysis = PaperAnalyzer.heuristic_extract(target)
-        text = (
-            f"🔬 *Paper Analysis:* {analysis.title}\n"
-            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-            f"🎯 *Objective:* {analysis.research_objective}\n"
-            f"🛠️ *Methods:* {', '.join(analysis.algorithms_used)}\n"
-            f"📊 *Dataset:* {analysis.dataset}\n"
-            f"📈 *Key Findings:* {analysis.key_findings}\n"
-            f"⚠️ *Limitations:* {analysis.limitations}"
-        )
-        await callback.message.reply(text, parse_mode=ParseMode.MARKDOWN)
-    await callback.answer("Analysis complete!")
 
 @router.message(Command("matrix"))
 async def cmd_matrix(message: types.Message):
@@ -148,6 +120,7 @@ async def cmd_matrix(message: types.Message):
     matrix = LiteratureMatrixBuilder.build_matrix(topic, papers)
     md_table = LiteratureMatrixBuilder.to_markdown(matrix)
 
+    # If markdown is too long for a single Telegram message (4096 chars limit), truncate or send summary
     if len(md_table) > 4000:
         md_table = md_table[:3950] + "\n\n*(Matrix truncated for display limit)*"
 
@@ -192,6 +165,7 @@ async def cmd_cite(message: types.Message):
     if resolved_citation:
         text = f"📖 *APA 7th:*\n`{resolved_citation}`\n\n📜 *BibTeX:*\n```bibtex\n{bib_citation or ''}\n```"
     else:
+        # Fallback dummy paper
         paper = Paper(id=raw, title="Academic Publication", doi=raw, source="Crossref")
         apa = CitationGenerator.to_apa(paper)
         bib = CitationGenerator.to_bibtex(paper)
@@ -247,3 +221,74 @@ async def cmd_saved(message: types.Message):
 
     lines.append("\n💡 *Export with:* `/saved export bibtex` or `/saved export csv`")
     await message.reply("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
+
+# Callback Queries
+@router.callback_query(F.data.startswith("search_corr:"))
+async def on_search_corrected(callback: types.CallbackQuery):
+    corr_term = callback.data.split(":", 1)[1]
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await execute_search(callback.message, corr_term, edit_message=callback.message)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("search_raw:"))
+async def on_search_raw(callback: types.CallbackQuery):
+    raw_term = callback.data.split(":", 1)[1]
+    await callback.message.edit_reply_markup(reply_markup=None)
+    await execute_search(callback.message, raw_term, edit_message=callback.message)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("nav_page:"))
+async def on_nav_page(callback: types.CallbackQuery):
+    idx = int(callback.data.split(":")[1])
+    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    if 0 <= idx < len(papers):
+        await send_paper_result(callback.message, papers, index=idx, edit_message=callback.message)
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("act_cite:"))
+async def on_cite(callback: types.CallbackQuery):
+    doi = callback.data.split(":")[1]
+    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    target = next((p for p in papers if p.doi == doi or p.id == doi), papers[0] if papers else None)
+    if target:
+        apa = CitationGenerator.to_apa(target)
+        bib = CitationGenerator.to_bibtex(target)
+        text = f"📖 *APA 7th:*\n`{apa}`\n\n📜 *BibTeX:*\n```bibtex\n{bib}\n```"
+        await callback.message.reply(text, parse_mode=ParseMode.MARKDOWN)
+    await callback.answer("Citation generated!")
+
+@router.callback_query(F.data.startswith("act_ana:"))
+async def on_analyze(callback: types.CallbackQuery):
+    doi = callback.data.split(":")[1]
+    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    target = next((p for p in papers if p.doi == doi or p.id == doi), papers[0] if papers else None)
+    if target:
+        analysis = PaperAnalyzer.heuristic_extract(target)
+        text = (
+            f"🔬 *Paper Analysis:* {analysis.title}\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+            f"🎯 *Objective:* {analysis.research_objective}\n"
+            f"🛠️ *Methods:* {', '.join(analysis.algorithms_used)}\n"
+            f"📊 *Dataset:* {analysis.dataset}\n"
+            f"📈 *Key Findings:* {analysis.key_findings}\n"
+            f"⚠️ *Limitations:* {analysis.limitations}"
+        )
+        await callback.message.reply(text, parse_mode=ParseMode.MARKDOWN)
+    await callback.answer("Analysis complete!")
+
+@router.callback_query(F.data.startswith("act_save:"))
+async def on_save_callback(callback: types.CallbackQuery):
+    doi_or_id = callback.data.split(":")[1]
+    chat_id = str(callback.message.chat.id)
+    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    target = next((p for p in papers if p.doi == doi_or_id or p.id == doi_or_id), papers[0] if papers else None)
+
+    if target:
+        added = default_collection_manager.add_paper(chat_id, target)
+        total = default_collection_manager.count(chat_id)
+        if added:
+            await callback.answer(f"💾 Saved to collection! (Total: {total})", show_alert=False)
+        else:
+            await callback.answer(f"ℹ️ Already saved in your collection! (Total: {total})", show_alert=False)
+    else:
+        await callback.answer("⚠️ Unable to save paper from current session.", show_alert=True)
