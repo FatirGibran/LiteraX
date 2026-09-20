@@ -31,7 +31,7 @@ flowchart LR
 - [x] Semantic Scholar Graph API adapter with citation counts.
 - [x] PDF text extraction and segmentation via `PyMuPDF`.
 - [x] Multi-format citation generator (APA 7th, IEEE, Harvard, BibTeX, RIS).
-- [ ] Automated DOI resolution through Crossref content negotiation caching.
+- [x] Automated DOI resolution through Crossref content negotiation caching.
 
 ---
 
@@ -40,8 +40,8 @@ flowchart LR
 - [x] Automated Research Gap discovery assistant (`/gap`).
 - [x] Export to Markdown, CSV, and formatted Microsoft Excel (`.xlsx`).
 - [x] pgvector integration for paper abstract embeddings and semantic search.
-- [ ] User authentication and persistent personal paper collections (`/save`, `/saved`).
-- [ ] Fast automated deduplication benchmarking suite.
+- [x] User authentication and persistent personal paper collections (`/save`, `/saved`).
+- [x] Fast automated deduplication benchmarking suite.
 
 ---
 
