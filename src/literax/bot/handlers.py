@@ -176,3 +176,24 @@ async def cmd_gap(message: types.Message):
     if len(text) > 4000:
         text = text[:3950] + "\n..."
     await status_msg.edit_text(text, parse_mode=ParseMode.MARKDOWN)
+
+@router.message(Command("cite"))
+async def cmd_cite(message: types.Message):
+    raw = message.text.replace("/cite", "").strip()
+    if not raw:
+        await message.reply("⚠️ Please provide a DOI or identifier.\nExample: `/cite 10.1016/j.cose.2024.103982`", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    status_msg = await message.reply("⏳ Resolving citation via DOI authority...", parse_mode=ParseMode.MARKDOWN)
+    resolved_citation = await CitationGenerator.resolve_doi_citation(raw, style="apa")
+    bib_citation = await CitationGenerator.resolve_doi_citation(raw, style="bibtex")
+
+    if resolved_citation:
+        text = f"📖 *APA 7th:*\n`{resolved_citation}`\n\n📜 *BibTeX:*\n```bibtex\n{bib_citation or ''}\n```"
+    else:
+        paper = Paper(id=raw, title="Academic Publication", doi=raw, source="Crossref")
+        apa = CitationGenerator.to_apa(paper)
+        bib = CitationGenerator.to_bibtex(paper)
+        text = f"📖 *APA 7th (Heuristic):*\n`{apa}`\n\n📜 *BibTeX:*\n```bibtex\n{bib}\n```"
+
+    await status_msg.edit_text(text, parse_mode=ParseMode.MARKDOWN)
