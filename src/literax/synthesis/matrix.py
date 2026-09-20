@@ -74,3 +74,13 @@ class LiteratureMatrixBuilder:
                 f"}}"
             )
         return "\n\n".join(entries)
+
+    @classmethod
+    def export(cls, matrix: LiteratureMatrix, export_format: str = "markdown") -> str:
+        fmt = export_format.lower().strip()
+        if fmt == "csv":
+            return cls.to_csv(matrix)
+        elif fmt == "bibtex":
+            return cls.to_bibtex(matrix)
+        else:
+            return cls.to_markdown(matrix)
