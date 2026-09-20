@@ -128,3 +128,26 @@ async def on_analyze(callback: types.CallbackQuery):
         )
         await callback.message.reply(text, parse_mode=ParseMode.MARKDOWN)
     await callback.answer("Analysis complete!")
+
+@router.message(Command("matrix"))
+async def cmd_matrix(message: types.Message):
+    topic = message.text.replace("/matrix", "").strip()
+    if not topic:
+        await message.reply("⚠️ Please provide a research topic.\nExample: `/matrix federated learning IoT`", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    status_msg = await message.reply(f"📊 Synthesizing literature matrix for *{topic}*...", parse_mode=ParseMode.MARKDOWN)
+    query_obj = SearchQuery(raw_query=topic, limit=5)
+    papers = await aggregator.search(query_obj)
+
+    if not papers:
+        await status_msg.edit_text(f"❌ No papers found to construct matrix for `{topic}`.", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    matrix = LiteratureMatrixBuilder.build_matrix(topic, papers)
+    md_table = LiteratureMatrixBuilder.to_markdown(matrix)
+
+    if len(md_table) > 4000:
+        md_table = md_table[:3950] + "\n\n*(Matrix truncated for display limit)*"
+
+    await status_msg.edit_text(md_table, parse_mode=ParseMode.MARKDOWN)
