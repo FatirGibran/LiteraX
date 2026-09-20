@@ -56,3 +56,32 @@ def test_api_matrix_export_endpoint():
     data = response.json()
     assert data["format"] == "markdown"
     assert "| **IoT Security Survey** |" in data["content"]
+
+def test_api_collections_lifecycle():
+    user_id = "test_user_api"
+    paper_payload = {
+        "id": "paper_api_1",
+        "title": "Adversarial Machine Learning",
+        "doi": "10.1145/adv.ml.2024",
+        "year": 2024,
+        "source": "OpenAlex",
+        "citation_count": 5
+    }
+
+    resp = client.post(f"/api/v1/collections/{user_id}/papers", json=paper_payload)
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "added"
+
+    resp = client.get(f"/api/v1/collections/{user_id}")
+    assert resp.status_code == 200
+    papers = resp.json()
+    assert len(papers) == 1
+    assert papers[0]["title"] == "Adversarial Machine Learning"
+
+    resp = client.get(f"/api/v1/collections/{user_id}/export?format=bibtex")
+    assert resp.status_code == 200
+    assert "@article{" in resp.json()["content"]
+
+    resp = client.delete(f"/api/v1/collections/{user_id}/papers/paper_api_1")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "removed"
