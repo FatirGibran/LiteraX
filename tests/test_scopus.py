@@ -48,3 +48,10 @@ async def test_scopus_provider_search_mock():
         assert paper.source == "Scopus"
         assert len(paper.authors) == 1
         assert paper.authors[0].name == "Smith, J."
+
+@pytest.mark.asyncio
+async def test_scopus_provider_error_handling():
+    provider = ScopusProvider(api_key="valid_key")
+    with patch("httpx.AsyncClient.get", side_effect=Exception("Connection Timeout")):
+        results = await provider.search(SearchQuery(raw_query="test"))
+        assert results == []
