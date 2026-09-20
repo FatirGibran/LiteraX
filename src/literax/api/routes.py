@@ -11,6 +11,7 @@ from literax.models import (
     ResearchGapReport,
     CitationResponse
 )
+from literax.engine.benchmark import DeduplicationBenchmarkSuite, DedupBenchmarkResult
 from literax.storage.collection import default_collection_manager
 from literax.nlp.fuzzy import FuzzyAutoCorrect
 from literax.engine.aggregator import PaperAggregator
@@ -25,6 +26,9 @@ aggregator = PaperAggregator()
 
 class CorrectRequest(BaseModel):
     query: str
+
+class BenchmarkRequest(BaseModel):
+    base_count: int = 50
 
 class MatrixRequest(BaseModel):
     topic: str
@@ -124,3 +128,9 @@ async def export_user_collection(user_id: str, format: str = "markdown"):
     """Exports user's collection to Markdown, CSV, or BibTeX."""
     exported = default_collection_manager.export_collection(user_id, export_format=format)
     return {"format": format, "content": exported}
+
+# Benchmark API
+@router.post("/benchmark/dedup", response_model=DedupBenchmarkResult)
+async def run_deduplication_benchmark(req: BenchmarkRequest = BenchmarkRequest()):
+    """Executes automated deduplication benchmark suite."""
+    return DeduplicationBenchmarkSuite.run_benchmark(req.base_count)
