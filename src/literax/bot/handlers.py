@@ -9,6 +9,7 @@ from literax.synthesis.citation import CitationGenerator
 from literax.synthesis.analyzer import PaperAnalyzer
 from literax.synthesis.matrix import LiteratureMatrixBuilder
 from literax.synthesis.gap_finder import ResearchGapFinder
+from literax.storage.collection import default_collection_manager
 from literax.bot.keyboards import get_confirmation_keyboard, get_paper_keyboard
 
 router = Router()
@@ -197,3 +198,52 @@ async def cmd_cite(message: types.Message):
         text = f"📖 *APA 7th (Heuristic):*\n`{apa}`\n\n📜 *BibTeX:*\n```bibtex\n{bib}\n```"
 
     await status_msg.edit_text(text, parse_mode=ParseMode.MARKDOWN)
+
+@router.message(Command("save"))
+async def cmd_save(message: types.Message):
+    chat_id = message.chat.id
+    papers = USER_SESSIONS.get(chat_id, [])
+    if not papers:
+        await message.reply("⚠️ No recently searched papers found in this session. Search for papers first with `/search <topic>`.", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    target = papers[0]
+    added = default_collection_manager.add_paper(str(chat_id), target)
+    total = default_collection_manager.count(str(chat_id))
+    if added:
+        await message.reply(f"💾 *Saved to collection:*\n_{target.title}_\n\nTotal saved papers: *{total}*", parse_mode=ParseMode.MARKDOWN)
+    else:
+        await message.reply(f"ℹ️ Paper is already in your collection.\nTotal saved: *{total}*", parse_mode=ParseMode.MARKDOWN)
+
+@router.message(Command("saved"))
+async def cmd_saved(message: types.Message):
+    chat_id = str(message.chat.id)
+    raw_args = message.text.replace("/saved", "").strip().lower()
+
+    if raw_args.startswith("export"):
+        parts = raw_args.split()
+        fmt = parts[1] if len(parts) > 1 else "markdown"
+        exported = default_collection_manager.export_collection(chat_id, export_format=fmt)
+        if not exported.strip():
+            await message.reply("📭 Your collection is currently empty.", parse_mode=ParseMode.MARKDOWN)
+            return
+        if len(exported) > 3900:
+            exported = exported[:3900] + "\n...(truncated)"
+        await message.reply(f"📑 *Exported Collection ({fmt.upper()}):*\n\n```\n{exported}\n```", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    papers = default_collection_manager.get_papers(chat_id)
+    if not papers:
+        await message.reply("📭 Your personal collection is empty.\nUse `/search` and click *Save* on any paper.", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    lines = [f"📚 *Your Saved Papers ({len(papers)})*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━"]
+    for idx, p in enumerate(papers[:10], 1):
+        year_str = f"({p.year})" if p.year else ""
+        lines.append(f"{idx}. *{p.title}* {year_str}\n   🔗 `{p.doi or p.id}`")
+
+    if len(papers) > 10:
+        lines.append(f"\n_...and {len(papers) - 10} more papers._")
+
+    lines.append("\n💡 *Export with:* `/saved export bibtex` or `/saved export csv`")
+    await message.reply("\n".join(lines), parse_mode=ParseMode.MARKDOWN)
