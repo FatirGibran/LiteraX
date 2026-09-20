@@ -85,3 +85,12 @@ def test_api_collections_lifecycle():
     resp = client.delete(f"/api/v1/collections/{user_id}/papers/paper_api_1")
     assert resp.status_code == 200
     assert resp.json()["status"] == "removed"
+
+def test_api_benchmark_endpoint():
+    response = client.post("/api/v1/benchmark/dedup", json={"base_count": 5})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_input"] > 5
+    assert data["expected_unique"] == 5
+    assert data["precision"] > 0
+    assert data["f1_score"] > 0
