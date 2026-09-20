@@ -51,3 +51,26 @@ class LiteratureMatrixBuilder:
         for r in matrix.rows:
             writer.writerow([r.paper_title, r.authors, r.year, r.method, r.dataset, r.result, r.limitation, r.doi])
         return output.getvalue()
+
+    @classmethod
+    def to_bibtex(cls, matrix: LiteratureMatrix) -> str:
+        """Exports all matrix rows as formatted BibTeX citation entries."""
+        import re
+        entries = []
+        for idx, r in enumerate(matrix.rows, 1):
+            first_author = re.sub(r"\W", "", r.authors.split()[0].lower()) if r.authors else "anon"
+            year = str(r.year or "nodate")
+            first_word = re.sub(r"\W", "", r.paper_title.split()[0].lower()) if r.paper_title else "work"
+            cite_key = f"{first_author}{year}{first_word}_{idx}"
+            doi_str = f"  doi={{{r.doi}}},\n" if r.doi else ""
+            year_str = f"  year={{{r.year}}},\n" if r.year else ""
+            entries.append(
+                f"@article{{{cite_key},\n"
+                f"  title={{{r.paper_title}}},\n"
+                f"  author={{{r.authors}}},\n"
+                f"  note={{Method: {r.method}, Dataset: {r.dataset}}},\n"
+                f"{year_str}"
+                f"{doi_str}"
+                f"}}"
+            )
+        return "\n\n".join(entries)
