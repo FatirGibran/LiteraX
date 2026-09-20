@@ -11,6 +11,7 @@ from literax.models import (
     ResearchGapReport,
     CitationResponse
 )
+from literax.storage.collection import default_collection_manager
 from literax.nlp.fuzzy import FuzzyAutoCorrect
 from literax.engine.aggregator import PaperAggregator
 from literax.synthesis.citation import CitationGenerator
@@ -94,3 +95,32 @@ async def get_citation(
     )
     cit_text = CitationGenerator.generate(paper, style=style)
     return CitationResponse(paper_id=id, style=style, citation=cit_text)
+
+# Collections API
+@router.post("/collections/{user_id}/papers")
+async def add_to_collection(user_id: str, paper: Paper):
+    """Saves a paper into the user's personal collection."""
+    added = default_collection_manager.add_paper(user_id, paper)
+    return {
+        "status": "added" if added else "already_exists",
+        "total_saved": default_collection_manager.count(user_id)
+    }
+
+@router.get("/collections/{user_id}", response_model=List[Paper])
+async def get_user_collection(user_id: str):
+    """Retrieves all saved papers in user's collection."""
+    return default_collection_manager.get_papers(user_id)
+
+@router.delete("/collections/{user_id}/papers/{paper_id}")
+async def remove_from_collection(user_id: str, paper_id: str):
+    """Removes a paper from user's collection."""
+    removed = default_collection_manager.remove_paper(user_id, paper_id)
+    if not removed:
+        raise HTTPException(status_code=404, detail="Paper not found in collection")
+    return {"status": "removed", "total_saved": default_collection_manager.count(user_id)}
+
+@router.get("/collections/{user_id}/export")
+async def export_user_collection(user_id: str, format: str = "markdown"):
+    """Exports user's collection to Markdown, CSV, or BibTeX."""
+    exported = default_collection_manager.export_collection(user_id, export_format=format)
+    return {"format": format, "content": exported}
