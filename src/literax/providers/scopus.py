@@ -145,3 +145,17 @@ class ScopusProvider(ResearchProvider):
         except Exception:
             pass
         return None
+
+    async def get_citation(self, identifier: str, style: str = "apa") -> str:
+        """Retrieves formatted citation string via DOI resolution."""
+        clean_doi = identifier.replace("https://doi.org/", "")
+        url = f"https://doi.org/{clean_doi}"
+        headers = {"Accept": f"text/x-bibliography; style={style}"}
+        try:
+            async with httpx.AsyncClient(follow_redirects=True, timeout=8.0) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    return resp.text.strip()
+        except Exception:
+            pass
+        return ""
