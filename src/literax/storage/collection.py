@@ -78,3 +78,46 @@ class PaperCollectionManager:
     def count(self, user_id: str) -> int:
         """Returns total number of papers saved by a user."""
         return len(self._collections.get(user_id, []))
+
+    def export_collection(self, user_id: str, export_format: str = "markdown") -> str:
+        """Exports user's paper collection into Markdown table, CSV, or BibTeX."""
+        papers = self.get_papers(user_id)
+        fmt = export_format.lower().strip()
+
+        if fmt == "bibtex":
+            bibtex_entries = [CitationGenerator.to_bibtex(p) for p in papers]
+            return "\n\n".join(bibtex_entries)
+
+        elif fmt == "csv":
+            output = io.StringIO()
+            writer = csv.writer(output)
+            writer.writerow(["ID", "Title", "Authors", "Year", "Journal", "DOI", "Citations", "Source"])
+            for p in papers:
+                author_names = "; ".join([a.name for a in p.authors]) if p.authors else "Unknown"
+                writer.writerow([
+                    p.id,
+                    p.title,
+                    author_names,
+                    p.year or "",
+                    p.journal or "",
+                    p.doi or "",
+                    p.citation_count,
+                    p.source
+                ])
+            return output.getvalue()
+
+        else:
+            lines = [
+                f"# 📚 Saved Paper Collection ({len(papers)} papers)\n",
+                "| # | Title | Authors | Year | Source | DOI |",
+                "| :---: | :--- | :--- | :---: | :---: | :--- |"
+            ]
+            for idx, p in enumerate(papers, 1):
+                author_str = p.authors[0].name if p.authors else "Unknown"
+                if len(p.authors) > 1:
+                    author_str += " et al."
+                doi_link = f"[{p.doi}](https://doi.org/{p.doi})" if p.doi else "N/A"
+                lines.append(f"| {idx} | **{p.title}** | {author_str} | {p.year or 'N/A'} | {p.source} | {doi_link} |")
+            return "\n".join(lines)
+
+default_collection_manager = PaperCollectionManager()
