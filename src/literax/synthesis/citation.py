@@ -120,3 +120,9 @@ class CitationGenerator:
         elif style_clean == "ris":
             return cls.to_ris(paper)
         return cls.to_apa(paper)
+
+    @classmethod
+    async def resolve_doi_citation(cls, doi: str, style: str = "apa") -> Optional[str]:
+        """Resolves formatted citation via DOI resolver with caching."""
+        from literax.synthesis.doi_resolver import default_doi_resolver
+        return await default_doi_resolver.resolve(doi, style=style)
