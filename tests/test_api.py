@@ -31,3 +31,28 @@ def test_api_citation_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert "https://doi.org/10.1016/j.cose.2024.103982" in data["citation"]
+
+def test_api_matrix_export_endpoint():
+    payload = {
+        "matrix": {
+            "topic": "IoT Security",
+            "rows": [
+                {
+                    "paper_title": "IoT Security Survey",
+                    "authors": "Smith et al.",
+                    "year": 2024,
+                    "method": "SVM",
+                    "dataset": "CIC-IoT-2023",
+                    "result": "High classification accuracy",
+                    "limitation": "Bounded dataset",
+                    "doi": "10.1016/j.iot.2024.01"
+                }
+            ]
+        },
+        "format": "markdown"
+    }
+    response = client.post("/api/v1/matrix/export", json=payload)
+    assert response.status_code == 200
+    data = response.json()
+    assert data["format"] == "markdown"
+    assert "| **IoT Security Survey** |" in data["content"]
