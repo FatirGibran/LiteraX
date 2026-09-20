@@ -39,3 +39,27 @@ def test_collection_crud_and_exports(tmp_path):
 
     assert manager.add_paper(user_id, paper2) is True
     assert manager.count(user_id) == 2
+
+    reloaded_manager = PaperCollectionManager(persistence_file=storage_file)
+    assert reloaded_manager.count(user_id) == 2
+    papers = reloaded_manager.get_papers(user_id)
+    assert papers[0].title == paper1.title
+    assert papers[1].title == paper2.title
+
+    md_export = reloaded_manager.export_collection(user_id, export_format="markdown")
+    assert "| **Deep Learning Approaches for Security** |" in md_export
+    assert "| **Fuzzy String Matching in Python** |" in md_export
+
+    csv_export = reloaded_manager.export_collection(user_id, export_format="csv")
+    assert "Deep Learning Approaches for Security" in csv_export
+    assert "Fuzzy String Matching in Python" in csv_export
+
+    bib_export = reloaded_manager.export_collection(user_id, export_format="bibtex")
+    assert "@article{" in bib_export
+    assert "doi={10.1016/j.sec.2024.01}" in bib_export
+
+    assert reloaded_manager.remove_paper(user_id, "p1") is True
+    assert reloaded_manager.count(user_id) == 1
+
+    reloaded_manager.clear_collection(user_id)
+    assert reloaded_manager.count(user_id) == 0
