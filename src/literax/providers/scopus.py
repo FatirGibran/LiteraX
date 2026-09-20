@@ -19,3 +19,12 @@ class ScopusProvider(ResearchProvider):
         self.api_key = api_key or settings.scopus_api_key
         self.inst_token = inst_token or settings.scopus_insttoken
         self.base_url = base_url
+
+    def _build_query_string(self, query: SearchQuery) -> str:
+        """Translates search query into Scopus TITLE-ABS-KEY syntax."""
+        query_str = f"TITLE-ABS-KEY({query.raw_query})"
+        if query.year_start and query.year_end:
+            query_str += f" AND PUBYEAR >= {query.year_start} AND PUBYEAR <= {query.year_end}"
+        elif query.year_start:
+            query_str += f" AND PUBYEAR >= {query.year_start}"
+        return query_str
