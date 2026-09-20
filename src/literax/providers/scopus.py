@@ -107,3 +107,41 @@ class ScopusProvider(ResearchProvider):
                 return papers
         except Exception:
             return []
+
+    async def get_paper(self, identifier: str) -> Optional[Paper]:
+        """Fetches metadata for a single paper by Scopus ID or DOI."""
+        if not self.api_key:
+            return None
+
+        clean_id = identifier.replace("https://doi.org/", "").replace("SCOPUS_ID:", "")
+        headers = {
+            "X-ELS-APIKey": self.api_key,
+            "Accept": "application/json"
+        }
+        if self.inst_token:
+            headers["X-ELS-Insttoken"] = self.inst_token
+
+        url = f"https://api.elsevier.com/content/abstract/scopus_id/{clean_id}"
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(url, headers=headers)
+                if resp.status_code == 200:
+                    data = resp.json().get("abstracts-retrieval-response", {})
+                    coredata = data.get("coredata", {})
+                    title = coredata.get("dc:title", "Untitled")
+                    doi = coredata.get("prism:doi")
+                    cover_date = coredata.get("prism:coverDate", "")
+                    year = int(cover_date[:4]) if len(cover_date) >= 4 and cover_date[:4].isdigit() else None
+
+                    return Paper(
+                        id=f"scopus_{clean_id}",
+                        title=title,
+                        abstract=coredata.get("dc:description"),
+                        doi=doi,
+                        year=year,
+                        journal=coredata.get("prism:publicationName"),
+                        source=self.name
+                    )
+        except Exception:
+            pass
+        return None
