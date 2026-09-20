@@ -95,3 +95,43 @@ class DeduplicationBenchmarkSuite:
         random.seed(42)
         random.shuffle(papers)
         return papers, expected_unique, cluster_map
+
+    @classmethod
+    def run_benchmark(cls, base_count: int = 50) -> DedupBenchmarkResult:
+        """Executes full deduplication benchmark and computes information retrieval metrics."""
+        papers, expected_unique, cluster_map = cls.generate_benchmark_dataset(base_count)
+        total_input = len(papers)
+
+        start_time = time.perf_counter()
+        deduplicated = Deduplicator.deduplicate(papers)
+        elapsed = time.perf_counter() - start_time
+
+        actual_unique = len(deduplicated)
+        true_positives = (total_input - actual_unique)
+        expected_merges = (total_input - expected_unique)
+
+        if actual_unique <= expected_unique:
+            false_positives = expected_unique - actual_unique
+            false_negatives = 0
+        else:
+            false_positives = 0
+            false_negatives = actual_unique - expected_unique
+
+        precision = true_positives / (true_positives + false_positives) if (true_positives + false_positives) > 0 else 1.0
+        recall = true_positives / expected_merges if expected_merges > 0 else 1.0
+        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
+        throughput = total_input / elapsed if elapsed > 0 else 0.0
+
+        return DedupBenchmarkResult(
+            total_input=total_input,
+            expected_unique=expected_unique,
+            actual_unique=actual_unique,
+            true_positives=true_positives,
+            false_positives=false_positives,
+            false_negatives=false_negatives,
+            precision=round(precision, 4),
+            recall=round(recall, 4),
+            f1_score=round(f1, 4),
+            elapsed_seconds=round(elapsed, 4),
+            throughput_papers_per_sec=round(throughput, 1)
+        )
