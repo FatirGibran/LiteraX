@@ -28,3 +28,23 @@ def test_cache_hits_and_misses():
     resolver.clear_cache()
     assert resolver.cache_size == 0
     assert resolver.hits == 0
+
+@pytest.mark.asyncio
+async def test_resolve_remote_mock():
+    resolver = DoiResolver()
+    doi = "10.1016/j.test.2024"
+
+    with patch("httpx.AsyncClient.get") as mock_get:
+        mock_resp = AsyncMock()
+        mock_resp.status_code = 200
+        mock_resp.text = "Author, A. (2024). Test Title. Journal of Testing."
+        mock_get.return_value = mock_resp
+
+        result = await resolver.resolve(doi, style="apa")
+        assert result == "Author, A. (2024). Test Title. Journal of Testing."
+        assert resolver.cache_size == 1
+
+        mock_get.reset_mock()
+        cached_result = await resolver.resolve(doi, style="apa")
+        assert cached_result == "Author, A. (2024). Test Title. Journal of Testing."
+        mock_get.assert_not_called()
