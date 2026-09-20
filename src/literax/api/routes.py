@@ -29,6 +29,10 @@ class MatrixRequest(BaseModel):
     topic: str
     papers: List[Paper]
 
+class MatrixExportRequest(BaseModel):
+    matrix: LiteratureMatrix
+    format: str = "markdown"
+
 class GapRequest(BaseModel):
     topic: str
     papers: List[Paper]
@@ -58,6 +62,12 @@ async def analyze_paper(paper: Paper):
 async def generate_matrix(req: MatrixRequest):
     """Generates a structured comparative literature review matrix."""
     return LiteratureMatrixBuilder.build_matrix(req.topic, req.papers)
+
+@router.post("/matrix/export")
+async def export_matrix(req: MatrixExportRequest):
+    """Exports a literature matrix into Markdown, CSV, or BibTeX."""
+    content = LiteratureMatrixBuilder.export(req.matrix, req.format)
+    return {"format": req.format, "content": content}
 
 @router.post("/gap", response_model=ResearchGapReport)
 async def find_research_gaps(req: GapRequest):
