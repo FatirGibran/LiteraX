@@ -5,6 +5,7 @@ from literax.providers.openalex import OpenAlexProvider
 from literax.providers.crossref import CrossrefProvider
 from literax.providers.semanticscholar import SemanticScholarProvider
 from literax.providers.sinta_garuda import SintaGarudaProvider
+from literax.providers.scopus import ScopusProvider
 from literax.engine.deduplicator import Deduplicator
 from literax.engine.ranker import RelevanceRanker
 from literax.models import Paper, SearchQuery
@@ -17,7 +18,8 @@ class PaperAggregator:
             OpenAlexProvider(),
             CrossrefProvider(),
             SemanticScholarProvider(),
-            SintaGarudaProvider()
+            SintaGarudaProvider(),
+            ScopusProvider()
         ]
 
     async def search(self, query: SearchQuery) -> List[Paper]:
