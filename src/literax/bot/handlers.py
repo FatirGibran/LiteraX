@@ -151,3 +151,28 @@ async def cmd_matrix(message: types.Message):
         md_table = md_table[:3950] + "\n\n*(Matrix truncated for display limit)*"
 
     await status_msg.edit_text(md_table, parse_mode=ParseMode.MARKDOWN)
+
+@router.message(Command("gap"))
+async def cmd_gap(message: types.Message):
+    topic = message.text.replace("/gap", "").strip()
+    if not topic:
+        await message.reply("⚠️ Please provide a research topic.\nExample: `/gap phishing detection zero day`", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    status_msg = await message.reply(f"🔍 Analyzing research gaps for *{topic}*...", parse_mode=ParseMode.MARKDOWN)
+    query_obj = SearchQuery(raw_query=topic, limit=5)
+    papers = await aggregator.search(query_obj)
+
+    if not papers:
+        await status_msg.edit_text(f"❌ No papers found to analyze gaps for `{topic}`.", parse_mode=ParseMode.MARKDOWN)
+        return
+
+    report = ResearchGapFinder.find_gaps(topic, papers)
+    lines = [f"🔬 *Research Gap Analysis: {report.topic}*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━"]
+    for idx, gap in enumerate(report.gaps, 1):
+        lines.append(f"📌 *{idx}. [{gap.category}] {gap.title}*\n{gap.description}\n")
+
+    text = "\n".join(lines)
+    if len(text) > 4000:
+        text = text[:3950] + "\n..."
+    await status_msg.edit_text(text, parse_mode=ParseMode.MARKDOWN)
