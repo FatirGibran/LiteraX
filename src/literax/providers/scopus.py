@@ -28,3 +28,82 @@ class ScopusProvider(ResearchProvider):
         elif query.year_start:
             query_str += f" AND PUBYEAR >= {query.year_start}"
         return query_str
+
+    async def search(self, query: SearchQuery) -> List[Paper]:
+        """Searches Scopus database using TITLE-ABS-KEY query syntax."""
+        if not self.api_key:
+            return []
+
+        headers = {
+            "X-ELS-APIKey": self.api_key,
+            "Accept": "application/json"
+        }
+        if self.inst_token:
+            headers["X-ELS-Insttoken"] = self.inst_token
+
+        params = {
+            "query": self._build_query_string(query),
+            "count": query.limit
+        }
+
+        try:
+            async with httpx.AsyncClient(timeout=10.0) as client:
+                resp = await client.get(self.base_url, headers=headers, params=params)
+                if resp.status_code != 200:
+                    return []
+
+                data = resp.json()
+                entries = data.get("search-results", {}).get("entry", [])
+                papers: List[Paper] = []
+
+                for entry in entries:
+                    if "error" in entry:
+                        continue
+
+                    title = entry.get("dc:title", "Untitled")
+                    doi = entry.get("prism:doi")
+                    scopus_id = entry.get("dc:identifier", "").replace("SCOPUS_ID:", "")
+
+                    authors: List[Author] = []
+                    creator = entry.get("dc:creator")
+                    if creator:
+                        authors.append(Author(name=creator))
+
+                    cover_date = entry.get("prism:coverDate", "")
+                    year = int(cover_date[:4]) if len(cover_date) >= 4 and cover_date[:4].isdigit() else None
+
+                    citedby = entry.get("citedby-count", 0)
+                    try:
+                        citation_count = int(citedby)
+                    except (ValueError, TypeError):
+                        citation_count = 0
+
+                    oa_flag = entry.get("openaccessFlag", False)
+                    open_access = bool(oa_flag and str(oa_flag).lower() in ["true", "1"])
+
+                    links = entry.get("link", [])
+                    landing_page = None
+                    for link in links:
+                        if link.get("@ref") == "scopus":
+                            landing_page = link.get("@href")
+                            break
+                    if not landing_page and doi:
+                        landing_page = f"https://doi.org/{doi}"
+
+                    papers.append(Paper(
+                        id=f"scopus_{scopus_id}" if scopus_id else (doi or f"scopus_{abs(hash(title))}"),
+                        title=title,
+                        abstract=entry.get("dc:description"),
+                        doi=doi,
+                        year=year,
+                        authors=authors,
+                        journal=entry.get("prism:publicationName"),
+                        citation_count=citation_count,
+                        source=self.name,
+                        open_access=open_access,
+                        landing_page_url=landing_page
+                    ))
+
+                return papers
+        except Exception:
+            return []
