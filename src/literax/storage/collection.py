@@ -57,6 +57,17 @@ class PaperCollectionManager:
         """Returns list of papers saved by the user."""
         return self._collections.get(user_id, []).copy()
 
+    def get_paper_by_id(self, user_id: str, paper_id: str) -> Optional[Paper]:
+        """Retrieves a specific paper from the user's collection by ID or DOI."""
+        for p in self._collections.get(user_id, []):
+            if p.id == paper_id or (p.doi and p.doi.lower() == paper_id.lower()):
+                return p
+        return None
+
+    def filter_by_year(self, user_id: str, year: int) -> List[Paper]:
+        """Filters papers in user's collection by publication year."""
+        return [p for p in self._collections.get(user_id, []) if p.year == year]
+
     def remove_paper(self, user_id: str, paper_id: str) -> bool:
         """Removes a paper by ID or DOI. Returns True if removed, False otherwise."""
         if user_id not in self._collections:
