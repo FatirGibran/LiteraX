@@ -28,6 +28,16 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     environment: str = "development"
 
+    @property
+    def is_production(self) -> bool:
+        """Returns True if the application environment is configured for production."""
+        return self.environment.lower() == "production"
+
+    @property
+    def is_testing(self) -> bool:
+        """Returns True if the application environment is configured for testing."""
+        return self.environment.lower() == "testing"
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
