@@ -29,6 +29,19 @@ def test_cache_hits_and_misses():
     assert resolver.cache_size == 0
     assert resolver.hits == 0
 
+def test_cache_hit_rate_and_is_cached():
+    resolver = DoiResolver(ttl_seconds=300)
+    doi = "10.5555/example"
+    style = "ieee"
+    assert not resolver.is_cached(doi, style)
+    assert resolver.cache_hit_rate == 0.0
+
+    resolver.set_cache(doi, style, "Example IEEE Citation")
+    assert resolver.is_cached(doi, style)
+
+    resolver.get_cached(doi, style)
+    assert resolver.cache_hit_rate == 1.0
+
 @pytest.mark.asyncio
 async def test_resolve_remote_mock():
     resolver = DoiResolver()
