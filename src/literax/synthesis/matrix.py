@@ -76,11 +76,19 @@ class LiteratureMatrixBuilder:
         return "\n\n".join(entries)
 
     @classmethod
+    def to_json(cls, matrix: LiteratureMatrix, indent: int = 2) -> str:
+        """Exports the literature matrix as a formatted JSON string."""
+        import json
+        return json.dumps(matrix.model_dump(), indent=indent)
+
+    @classmethod
     def export(cls, matrix: LiteratureMatrix, export_format: str = "markdown") -> str:
         fmt = export_format.lower().strip()
         if fmt == "csv":
             return cls.to_csv(matrix)
         elif fmt == "bibtex":
             return cls.to_bibtex(matrix)
+        elif fmt == "json":
+            return cls.to_json(matrix)
         else:
             return cls.to_markdown(matrix)
