@@ -95,6 +95,7 @@ class ResearchGapItem(BaseModel):
     title: str
     description: str
     category: str  # Methodology, Dataset, Scalability, Evaluation
+    severity: str = "Medium"  # High, Medium, Low
     supporting_papers: List[str] = Field(default_factory=list)
 
 class ResearchGapReport(BaseModel):
