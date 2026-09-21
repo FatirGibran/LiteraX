@@ -38,3 +38,16 @@ def test_protected_term_not_modified():
     assert "svm" in tokens
     assert "untuk" in tokens
     assert "phishing" in tokens
+
+def test_fuzzy_vocabulary_and_helpers():
+    fuzzy = FuzzyAutoCorrect()
+    assert fuzzy.vocabulary_size > 50
+    assert fuzzy.is_known_typo("machin")
+    assert not fuzzy.is_known_typo("machine")
+
+def test_already_correct_query():
+    fuzzy = FuzzyAutoCorrect()
+    query = "deep learning classification"
+    res = fuzzy.process_query(query)
+    assert res.action == "UNCHANGED"
+    assert res.corrected_query == query
