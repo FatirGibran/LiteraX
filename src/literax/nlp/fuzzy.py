@@ -41,6 +41,16 @@ class FuzzyAutoCorrect:
                         self.academic_vocab.add(v_lower)
                         self.academic_vocab.add(k_lower)
 
+    @property
+    def vocabulary_size(self) -> int:
+        """Returns the total number of unique terms in the loaded academic vocabulary."""
+        return len(self.academic_vocab)
+
+    def is_known_typo(self, token: str) -> bool:
+        """Checks whether the token exists in direct typo mappings."""
+        t = token.lower().strip()
+        return t in self.typo_map and self.typo_map[t] != t
+
     def calculate_confidence(
         self,
         original_token: str,
