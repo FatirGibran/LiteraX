@@ -42,6 +42,11 @@ Ensure that all existing tests pass and write new tests for your features:
 pytest --cov=literax -v
 ```
 
+### 5. Type Hints & Docstrings
+- All new functions and public methods should include standard type annotations.
+- Provide descriptive docstrings explaining method parameters, return types, and business logic.
+- Avoid introducing circular dependencies between synthesis, storage, and models.
+
 ---
 
 ## 💬 Commit Message Guidelines
