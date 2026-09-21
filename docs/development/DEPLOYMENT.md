@@ -149,5 +149,46 @@ server {
 
 LiteraX exposes a health check route:
 - `GET /health`
-  - Returns `{"status": "healthy", "postgres": true, "redis": true}`
-- Suitable for uptime monitors (UptimeRobot, AWS ALB Health Checks).
+  - Returns `{"status": "healthy", "service": "LiteraX API Gateway", "version": "0.1.0"}`
+- Suitable for uptime monitors (UptimeRobot, AWS ALB Health Checks, local Nginx health checks).
+
+---
+
+## 🖥️ Bare-Metal / Ubuntu Server Deployment (Systemd)
+
+If deploying directly on an Ubuntu/Debian server or Ubuntu in WSL2 without Docker:
+
+### 1. Prerequisites
+```bash
+sudo apt update && sudo apt install -y python3-venv python3-pip nginx
+```
+
+### 2. Clone and Setup Environment
+```bash
+git clone https://github.com/FatirGibran/LiteraX.git /home/fatir/LiteraX
+cd /home/fatir/LiteraX
+python3 -m venv .venv
+.venv/bin/pip install --upgrade pip
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -e .
+cp .env.example .env
+```
+
+### 3. Systemd Service
+Copy the template service file:
+```bash
+sudo cp deploy/systemd/literax-api.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now literax-api.service
+sudo systemctl status literax-api.service
+```
+
+### 4. Nginx Reverse Proxy
+Configure Nginx to proxy port 80 to port 8080:
+```bash
+sudo cp deploy/nginx/literax.conf /etc/nginx/sites-available/literax
+sudo ln -s /etc/nginx/sites-available/literax /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+

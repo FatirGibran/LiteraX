@@ -1,0 +1,15 @@
+[Unit]
+Description=LiteraX FastAPI Gateway Service
+After=network.target
+
+[Service]
+Type=simple
+User=fatir
+WorkingDirectory=/home/fatir/LiteraX
+ExecStart=/home/fatir/LiteraX/.venv/bin/uvicorn literax.api.main:app --host 127.0.0.1 --port 8080
+Restart=always
+RestartSec=5
+EnvironmentFile=/home/fatir/LiteraX/.env
+
+[Install]
+WantedBy=multi-user.target
