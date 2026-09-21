@@ -60,10 +60,16 @@ htmlcov/
 # Database & local data
 *.sqlite
 *.sqlite3
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite-journal
 *.db
+*.log
 data/
 downloads/
 pdfs/
+scratch/
+tmp/
 
 # OS specific
 .DS_Store
