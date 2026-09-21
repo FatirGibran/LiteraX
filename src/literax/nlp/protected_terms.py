@@ -22,6 +22,9 @@ class ProtectedTermsManager:
         if clean in self.protected_terms:
             return True
         # Check hyphenated variations
-        if clean.replace("-", "") in self.protected_terms:
+        clean_no_hyphens = clean.replace("-", "")
+        if clean_no_hyphens in self.protected_terms:
+            return True
+        if any(clean_no_hyphens == t.replace("-", "") for t in self.protected_terms):
             return True
         return False
