@@ -60,5 +60,16 @@
   "embedding": "embedding",
   "transformer": "transformer",
   "attention": "attention",
-  "multimodal": "multimodal"
+  "multimodal": "multimodal",
+  "finetuning": "fine-tuning",
+  "segmentashun": "segmentation",
+  "segmentation": "segmentation",
+  "retrieval": "retrieval",
+  "retrival": "retrieval",
+  "distillation": "distillation",
+  "distilation": "distillation",
+  "quantization": "quantization",
+  "quantisasion": "quantization",
+  "reinforcement": "reinforcement",
+  "reinforsment": "reinforcement"
 }
