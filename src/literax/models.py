@@ -23,6 +23,16 @@ class Paper(BaseModel):
     landing_page_url: Optional[str] = None
     composite_relevance: float = 0.0
 
+    @property
+    def has_doi(self) -> bool:
+        """Returns True if the paper has a non-empty DOI."""
+        return bool(self.doi and self.doi.strip())
+
+    @property
+    def primary_author(self) -> str:
+        """Returns the name of the first author or 'Anonymous' if empty."""
+        return self.authors[0].name if self.authors else "Anonymous"
+
 class SearchQuery(BaseModel):
     """Academic search query request payload with filter parameters."""
     raw_query: str
