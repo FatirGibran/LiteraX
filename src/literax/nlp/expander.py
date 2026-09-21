@@ -26,6 +26,11 @@ class QueryExpander:
     }
 
     @classmethod
+    def get_synonyms(cls, term: str) -> List[str]:
+        """Retrieves known academic synonyms for a given term, if available."""
+        return cls.SYNONYMS.get(term.lower().strip(), []).copy()
+
+    @classmethod
     def translate_to_english(cls, query: str) -> str:
         """Translates known Indonesian academic keywords to English."""
         text = query.lower()
