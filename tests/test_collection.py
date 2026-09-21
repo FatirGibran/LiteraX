@@ -58,6 +58,21 @@ def test_collection_crud_and_exports(tmp_path):
     assert "@article{" in bib_export
     assert "doi={10.1016/j.sec.2024.01}" in bib_export
 
+    # Test get_paper_by_id and filter_by_year
+    found = reloaded_manager.get_paper_by_id(user_id, "p2")
+    assert found is not None
+    assert found.title == paper2.title
+
+    not_found = reloaded_manager.get_paper_by_id(user_id, "non_existent_id")
+    assert not_found is None
+
+    papers_2023 = reloaded_manager.filter_by_year(user_id, 2023)
+    assert len(papers_2023) == 1
+    assert papers_2023[0].id == "p2"
+
+    papers_2020 = reloaded_manager.filter_by_year(user_id, 2020)
+    assert len(papers_2020) == 0
+
     assert reloaded_manager.remove_paper(user_id, "p1") is True
     assert reloaded_manager.count(user_id) == 1
 
