@@ -68,6 +68,16 @@ class CitationGenerator:
         return f"{authors} {year} {title}{journal}".strip()
 
     @classmethod
+    def to_mla(cls, paper: Paper) -> str:
+        """Formats citation in Modern Language Association (MLA) style."""
+        authors = cls.format_authors_apa(paper).replace("&", "and")
+        title = f'"{paper.title.rstrip(".")}."'
+        journal = f" *{paper.journal}*," if paper.journal else ""
+        year = f" {paper.year}." if paper.year else ""
+        doi = f" https://doi.org/{paper.doi}" if paper.doi else ""
+        return f"{authors}. {title}{journal}{year}{doi}".strip()
+
+    @classmethod
     def to_bibtex(cls, paper: Paper) -> str:
         # Generate bibtex citation key
         first_author = paper.authors[0].name.split()[-1].lower() if paper.authors else "anon"
@@ -117,6 +127,8 @@ class CitationGenerator:
             return cls.to_harvard(paper)
         elif style_clean == "bibtex":
             return cls.to_bibtex(paper)
+        elif style_clean == "mla":
+            return cls.to_mla(paper)
         elif style_clean == "ris":
             return cls.to_ris(paper)
         return cls.to_apa(paper)
