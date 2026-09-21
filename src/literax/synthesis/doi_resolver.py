@@ -64,9 +64,23 @@ class DoiResolver:
         self.hits = 0
         self.misses = 0
 
+    def is_cached(self, doi: str, style: str) -> bool:
+        """Checks if a valid, unexpired cached citation exists for the DOI."""
+        key = (self.normalize_doi(doi).lower(), style.lower())
+        if key in self._cache:
+            _, exp = self._cache[key]
+            return time.time() < exp
+        return False
+
     @property
     def cache_size(self) -> int:
         return len(self._cache)
+
+    @property
+    def cache_hit_rate(self) -> float:
+        """Returns the hit rate ratio (0.0 to 1.0) of the cache."""
+        total = self.hits + self.misses
+        return round(self.hits / total, 3) if total > 0 else 0.0
 
     async def resolve(
         self,
