@@ -22,3 +22,18 @@ def test_citation_generation():
     assert "@article{" in bibtex
     assert "rahman2025machine" in bibtex
     assert "Computers & Security" in bibtex
+
+def test_citation_generation_mla():
+    paper = Paper(
+        id="mla_paper",
+        title="Modern Machine Learning Paradigm",
+        authors=[Author(name="John Doe")],
+        journal="Journal of AI Research",
+        year=2024,
+        doi="10.1000/182",
+        source="OpenAlex"
+    )
+    mla = CitationGenerator.generate(paper, style="mla")
+    assert "Doe, J." in mla
+    assert '"Modern Machine Learning Paradigm."' in mla
+    assert "2024" in mla
