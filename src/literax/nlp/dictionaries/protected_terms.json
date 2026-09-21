@@ -4,5 +4,6 @@
   "iot", "5g", "6g", "rfid", "uav", "wsn", "api", "rest", "graphql", "crud",
   "covid-19", "sars", "dna", "rna", "crispr", "mri", "ct", "eeg", "ecg",
   "dos", "ddos", "mitm", "sql", "xss", "csrf", "ssl", "tls", "url", "uri", "ip", "dns",
-  "transformer", "distilbert", "roberta", "t5", "llama", "mistral"
+  "transformer", "distilbert", "roberta", "t5", "llama", "mistral",
+  "rag", "lora", "qlora", "mamba", "vit", "yolo", "gpu", "tpu"
 ]
