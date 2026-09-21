@@ -6,6 +6,8 @@ from literax.models import Paper
 class Deduplicator:
     """4-Tier Deduplication Engine for merging multi-source academic papers."""
 
+    DEFAULT_TITLE_SIMILARITY_THRESHOLD: float = 0.88
+
     @staticmethod
     def normalize_doi(doi: Optional[str]) -> Optional[str]:
         """Normalizes a DOI string by removing HTTP prefixes, resolver domains, and lowercasing."""
@@ -23,7 +25,7 @@ class Deduplicator:
         return re.sub(r"\s+", " ", clean).strip()
 
     @classmethod
-    def are_duplicates(cls, p1: Paper, p2: Paper) -> bool:
+    def are_duplicates(cls, p1: Paper, p2: Paper, title_threshold: float = DEFAULT_TITLE_SIMILARITY_THRESHOLD) -> bool:
         """Determines if two paper instances refer to the same scholarly publication."""
         # Tier 1: Canonical Normalized DOI match
         doi1 = cls.normalize_doi(p1.doi)
@@ -36,7 +38,7 @@ class Deduplicator:
         norm_t2 = cls.normalize_title(p2.title)
 
         title_sim = fuzz.ratio(norm_t1, norm_t2) / 100.0
-        if title_sim < 0.88:
+        if title_sim < title_threshold:
             return False
 
         # If publication year exists on both, verify within 1 year delta
@@ -86,14 +88,14 @@ class Deduplicator:
         )
 
     @classmethod
-    def deduplicate(cls, papers: List[Paper]) -> List[Paper]:
+    def deduplicate(cls, papers: List[Paper], title_threshold: float = DEFAULT_TITLE_SIMILARITY_THRESHOLD) -> List[Paper]:
         """Deduplicates a list of papers and returns unique combined papers."""
         unique_papers: List[Paper] = []
 
         for candidate in papers:
             matched_idx = -1
             for i, existing in enumerate(unique_papers):
-                if cls.are_duplicates(existing, candidate):
+                if cls.are_duplicates(existing, candidate, title_threshold=title_threshold):
                     matched_idx = i
                     break
 
