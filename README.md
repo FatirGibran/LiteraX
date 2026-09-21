@@ -207,6 +207,22 @@ LiteraX is built strictly as a **research assistant tool**.
 
 ---
 
+## 🧪 Testing
+
+LiteraX is thoroughly tested using `pytest`. To execute the entire test suite:
+
+```bash
+pytest -v
+```
+
+To run tests with coverage reporting:
+
+```bash
+pytest --cov=literax --cov-report=term-missing
+```
+
+---
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
