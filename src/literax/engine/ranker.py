@@ -9,6 +9,18 @@ class RelevanceRanker:
     CURRENT_YEAR = 2026
 
     @classmethod
+    def calculate_recency_score(cls, year: Optional[int], current_year: int = CURRENT_YEAR) -> float:
+        """Calculates exponential decay recency score based on publication year."""
+        paper_year = year or 2020
+        year_diff = max(0, current_year - paper_year)
+        return math.exp(-0.08 * year_diff)
+
+    @classmethod
+    def calculate_citation_score(cls, citation_count: int) -> float:
+        """Calculates normalized logarithmic citation score scaled between 0.0 and 1.0."""
+        return min(1.0, math.log10(max(0, citation_count) + 1) / 3.0)
+
+    @classmethod
     def calculate_score(cls, query: str, paper: Paper) -> float:
         query_lower = query.lower()
         title_lower = paper.title.lower()
@@ -21,12 +33,10 @@ class RelevanceRanker:
         s_bm25 = fuzz.partial_ratio(query_lower, title_lower) / 100.0
 
         # 3. Recency score (Exponential decay)
-        paper_year = paper.year or 2020
-        year_diff = max(0, cls.CURRENT_YEAR - paper_year)
-        s_recency = math.exp(-0.08 * year_diff)
+        s_recency = cls.calculate_recency_score(paper.year)
 
         # 4. Citation impact (Logarithmic scaling)
-        s_citation = min(1.0, math.log10(paper.citation_count + 1) / 3.0)
+        s_citation = cls.calculate_citation_score(paper.citation_count)
 
         # 5. Source quality tier
         source_lower = paper.source.lower()
