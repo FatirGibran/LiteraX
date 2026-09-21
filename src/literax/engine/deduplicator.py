@@ -8,6 +8,7 @@ class Deduplicator:
 
     @staticmethod
     def normalize_doi(doi: Optional[str]) -> Optional[str]:
+        """Normalizes a DOI string by removing HTTP prefixes, resolver domains, and lowercasing."""
         if not doi:
             return None
         clean = doi.strip().lower()
@@ -16,12 +17,14 @@ class Deduplicator:
 
     @staticmethod
     def normalize_title(title: str) -> str:
+        """Strips punctuation and collapses whitespace for fuzzy title comparison."""
         clean = title.lower()
         clean = re.sub(r"[^\w\s]", "", clean)
         return re.sub(r"\s+", " ", clean).strip()
 
     @classmethod
     def are_duplicates(cls, p1: Paper, p2: Paper) -> bool:
+        """Determines if two paper instances refer to the same scholarly publication."""
         # Tier 1: Canonical Normalized DOI match
         doi1 = cls.normalize_doi(p1.doi)
         doi2 = cls.normalize_doi(p2.doi)
