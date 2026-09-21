@@ -42,3 +42,21 @@ def test_deduplicator_fuzzy_title_match():
 
     papers = Deduplicator.deduplicate([p1, p2])
     assert len(papers) == 1
+
+def test_deduplicator_custom_threshold():
+    p1 = Paper(
+        id="t1",
+        title="Deep Reinforcement Learning for Autonomous Driving",
+        year=2023,
+        source="Conference"
+    )
+    p2 = Paper(
+        id="t2",
+        title="Deep Reinforcement Learning for Cooperative Autonomous Driving",
+        year=2023,
+        source="Journal"
+    )
+    # With a very high threshold (0.99), these are distinct
+    assert not Deduplicator.are_duplicates(p1, p2, title_threshold=0.99)
+    # With a lower threshold (0.75), these might match
+    assert Deduplicator.are_duplicates(p1, p2, title_threshold=0.75)
