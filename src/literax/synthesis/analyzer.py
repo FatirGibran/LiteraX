@@ -59,3 +59,17 @@ class PaperAnalyzer:
     async def analyze(cls, paper: Paper, llm_client: Optional[object] = None) -> PaperAnalysis:
         """Analyzes a paper using LLM or falls back to robust heuristic NLP."""
         return cls.heuristic_extract(paper)
+
+    @classmethod
+    def to_markdown_summary(cls, analysis: PaperAnalysis) -> str:
+        """Formats a PaperAnalysis instance into clean structured Markdown."""
+        return (
+            f"### 📑 {analysis.title}\n\n"
+            f"- **🎯 Objective:** {analysis.research_objective}\n"
+            f"- **🔬 Methodology:** {analysis.methodology}\n"
+            f"- **📊 Dataset:** {analysis.dataset}\n"
+            f"- **⚙️ Algorithms:** {', '.join(analysis.algorithms_used)}\n"
+            f"- **📈 Metrics:** {', '.join(analysis.evaluation_metrics)}\n"
+            f"- **💡 Key Findings:** {analysis.key_findings}\n"
+            f"- **⚠️ Limitations:** {analysis.limitations}"
+        )
