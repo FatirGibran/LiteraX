@@ -7,9 +7,14 @@ class QueryNormalizer:
 
     BOOLEAN_OPERATORS = {"AND", "OR", "NOT"}
 
+    @staticmethod
+    def clean_whitespace(text: str) -> str:
+        """Collapses consecutive whitespace characters into a single space and strips boundaries."""
+        return re.sub(r"\s+", " ", text).strip()
+
     @classmethod
     def normalize(cls, query: str) -> str:
-        """Normalizes unicode, strips excess whitespace, and cleans punctuation."""
+        """Normalizes unicode characters (NFKC), strips excess whitespace, and cleans punctuation."""
         if not query:
             return ""
 
@@ -33,8 +38,7 @@ class QueryNormalizer:
         text = "".join(cleaned_chars)
 
         # Collapse whitespace
-        text = re.sub(r"\s+", " ", text).strip()
-        return text
+        return cls.clean_whitespace(text)
 
     @classmethod
     def tokenize(cls, normalized_query: str) -> List[str]:
