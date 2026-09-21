@@ -23,3 +23,18 @@ def test_ranker_ordering():
     ranked = RelevanceRanker.rank("machine learning phishing detection", [p_irrelevant, p_relevant])
     assert ranked[0].id == "2"
     assert ranked[0].composite_relevance > ranked[1].composite_relevance
+
+def test_recency_scoring():
+    # Newer papers should have higher recency score than older ones
+    recent = RelevanceRanker.calculate_recency_score(2025, current_year=2026)
+    old = RelevanceRanker.calculate_recency_score(2010, current_year=2026)
+    assert recent > old
+    assert recent <= 1.0
+    assert old >= 0.0
+
+def test_citation_scoring():
+    zero_cite = RelevanceRanker.calculate_citation_score(0)
+    high_cite = RelevanceRanker.calculate_citation_score(1000)
+    assert zero_cite == 0.0
+    assert high_cite <= 1.0
+    assert high_cite > zero_cite

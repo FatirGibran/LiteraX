@@ -1,5 +1,5 @@
 import math
-from typing import List
+from typing import List, Optional
 from rapidfuzz import fuzz
 from literax.models import Paper
 
