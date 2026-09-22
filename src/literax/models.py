@@ -113,6 +113,11 @@ class ResearchGapReport(BaseModel):
     topic: str
     gaps: List[ResearchGapItem] = Field(default_factory=list)
 
+    @property
+    def total_gaps(self) -> int:
+        """Returns the total number of identified research gaps."""
+        return len(self.gaps)
+
 class CitationResponse(BaseModel):
     """Formatted academic citation response across various reference styles."""
     paper_id: str
