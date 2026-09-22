@@ -71,5 +71,13 @@
   "quantization": "quantization",
   "quantisasion": "quantization",
   "reinforcement": "reinforcement",
-  "reinforsment": "reinforcement"
+  "reinforsment": "reinforcement",
+  "kinematics": "kinematics",
+  "kinamatics": "kinematics",
+  "autonomous": "autonomous",
+  "autonomus": "autonomous",
+  "trajectory": "trajectory",
+  "trajektory": "trajectory",
+  "localization": "localization",
+  "lokalisation": "localization"
 }
