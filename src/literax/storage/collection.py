@@ -64,6 +64,11 @@ class PaperCollectionManager:
                 return p
         return None
 
+    def has_paper(self, user_id: str, paper_id: str) -> bool:
+        """Checks if a paper exists in the user's collection by ID or DOI."""
+        return self.get_paper_by_id(user_id, paper_id) is not None
+
+
     def filter_by_year(self, user_id: str, year: int) -> List[Paper]:
         """Filters papers in user's collection by publication year."""
         return [p for p in self._collections.get(user_id, []) if p.year == year]
