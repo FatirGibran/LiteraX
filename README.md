@@ -155,15 +155,28 @@ cp .env.example .env
 # BOT_TOKEN, DATABASE_URL, REDIS_URL, OPENALEX_EMAIL, SEMANTIC_SCHOLAR_API_KEY, SCOPUS_API_KEY, LLM_API_KEY
 ```
 
-### 4. Run with Docker Compose
+### 4. Run Services
 
+#### Option A: Docker Compose
 ```bash
 docker compose up -d
 ```
 
+#### Option B: Bare-Metal / Local (FastAPI + Ollama)
+```bash
+# Optional: Serve local LLM via Ollama (e.g. llama3, qwen2.5, mistral)
+ollama serve &
+ollama pull llama3
+
+# Run LiteraX FastAPI Service
+uvicorn literax.api.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
 ### 5. Access the Services
-- **FastAPI Documentation**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **FastAPI Documentation & Swagger UI**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **OpenAPI Schema**: [http://localhost:8000/openapi.json](http://localhost:8000/openapi.json)
 - **Telegram Bot**: Start a chat with your configured Telegram Bot username.
+
 
 ---
 
