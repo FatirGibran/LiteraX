@@ -19,21 +19,23 @@ aggregator = PaperAggregator()
 # In-memory session cache for demonstration: chat_id -> List[Paper]
 USER_SESSIONS = {}
 
+WELCOME_MESSAGE_TEXT = (
+    "🔬 *Welcome to LiteraX — AI Research Automation Bot*\n\n"
+    "I can discover, analyze, and cite scientific papers from SINTA, Scopus, OpenAlex, and Crossref.\n\n"
+    "⚡ *Commands:*\n"
+    "• `/search <query>` — Search papers with multi-factor fuzzy auto-correction\n"
+    "• `/matrix <topic>` — Generate comparative literature review matrix\n"
+    "• `/gap <topic>` — Synthesize methodological and empirical research gaps\n"
+    "• `/cite <doi>` — Get formatted APA 7th and BibTeX citation\n"
+    "• `/save` — Bookmark the current paper to your collection\n"
+    "• `/saved` — View and export your saved papers (`/saved export bibtex`)\n\n"
+    "_Example:_ `/search machne lerning untk deteksi phising`"
+)
+
 @router.message(Command("start"))
+@router.message(Command("help"))
 async def cmd_start(message: types.Message):
-    welcome_text = (
-        "🔬 *Welcome to LiteraX — AI Research Automation Bot*\n\n"
-        "I can discover, analyze, and cite scientific papers from SINTA, Scopus, OpenAlex, and Crossref.\n\n"
-        "⚡ *Commands:*\n"
-        "• `/search <query>` — Search papers with multi-factor fuzzy auto-correction\n"
-        "• `/matrix <topic>` — Generate comparative literature review matrix\n"
-        "• `/gap <topic>` — Synthesize methodological and empirical research gaps\n"
-        "• `/cite <doi>` — Get formatted APA 7th and BibTeX citation\n"
-        "• `/save` — Bookmark the current paper to your collection\n"
-        "• `/saved` — View and export your saved papers (`/saved export bibtex`)\n\n"
-        "_Example:_ `/search machne lerning untk deteksi phising`"
-    )
-    await message.reply(welcome_text, parse_mode=ParseMode.MARKDOWN)
+    await message.reply(WELCOME_MESSAGE_TEXT, parse_mode=ParseMode.MARKDOWN)
 
 @router.message(Command("search"))
 async def cmd_search(message: types.Message):
