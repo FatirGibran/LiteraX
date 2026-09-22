@@ -132,3 +132,29 @@ Raw Query
   - Build cross-paper literature matrices.
   - Formulate potential research gaps based on methodological differences.
   - Export citations in APA, IEEE, BibTeX, and RIS formats.
+
+---
+
+## 🏛️ Component Architecture Mapping
+
+```text
+[Telegram Bot / REST API Client]
+       │
+       ├── /search, /correct ──► [NLP Fuzzy Engine & Normalizer]
+       │                               │
+       │                               ▼
+       ├── Multi-Source Search ─► [PaperAggregator]
+       │                               ├── [CrossrefProvider]
+       │                               ├── [OpenAlexProvider]
+       │                               └── [ScopusProvider]
+       │                                       │
+       │                                       ▼
+       │                          [Title & DOI Deduplicator]
+       │                                       │
+       │                                       ▼
+       ├── Synthesis ──────────► [PaperAnalyzer / MatrixBuilder / GapFinder]
+       │                                       │
+       │                                       ▼
+       └── Bookmarks ──────────► [PaperCollectionManager (JSON / Disk)]
+```
+
