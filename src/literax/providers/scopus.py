@@ -20,6 +20,11 @@ class ScopusProvider(ResearchProvider):
         self.inst_token = inst_token or settings.scopus_insttoken
         self.base_url = base_url
 
+    @property
+    def is_authenticated(self) -> bool:
+        """Returns True if Scopus API key is configured."""
+        return bool(self.api_key and self.api_key.strip())
+
     def _build_query_string(self, query: SearchQuery) -> str:
         """Translates search query into Scopus TITLE-ABS-KEY syntax."""
         query_str = f"TITLE-ABS-KEY({query.raw_query})"
