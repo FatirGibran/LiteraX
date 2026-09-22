@@ -28,3 +28,13 @@ def test_to_markdown_summary():
     assert "### 📑 Graph Neural Networks in Cybersecurity" in md
     assert "**🎯 Objective:**" in md
     assert "**🔬 Methodology:**" in md
+
+
+def test_analyzer_constants():
+    assert "Random Forest" in PaperAnalyzer.POTENTIAL_ALGORITHMS
+    assert "BERT" in PaperAnalyzer.POTENTIAL_ALGORITHMS
+    assert "Accuracy" in PaperAnalyzer.POTENTIAL_METRICS
+    assert "F1-Score" in PaperAnalyzer.POTENTIAL_METRICS
+    assert len(PaperAnalyzer.POTENTIAL_ALGORITHMS) > 10
+    assert len(PaperAnalyzer.POTENTIAL_METRICS) > 5
+
