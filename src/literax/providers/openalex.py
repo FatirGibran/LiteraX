@@ -16,12 +16,17 @@ class OpenAlexProvider(ResearchProvider):
     @staticmethod
     def decode_abstract(inverted_index: Optional[Dict[str, List[int]]]) -> Optional[str]:
         """Decodes OpenAlex abstract_inverted_index into text."""
-        if not inverted_index:
+        if not inverted_index or not isinstance(inverted_index, dict):
             return None
         pairs = []
         for word, positions in inverted_index.items():
+            if not isinstance(positions, list):
+                continue
             for pos in positions:
-                pairs.append((pos, word))
+                if isinstance(pos, int):
+                    pairs.append((pos, word))
+        if not pairs:
+            return None
         pairs.sort(key=lambda x: x[0])
         return " ".join([w for _, w in pairs])
 
