@@ -78,3 +78,18 @@ def test_collection_crud_and_exports(tmp_path):
 
     reloaded_manager.clear_collection(user_id)
     assert reloaded_manager.count(user_id) == 0
+
+
+def test_collection_has_paper(tmp_path):
+    manager = PaperCollectionManager(persistence_file=tmp_path / "coll.json")
+    user = "alice"
+    paper = Paper(id="p_has", title="Testing has_paper", doi="10.1234/test.doi", source="ArXiv")
+
+    assert manager.has_paper(user, "p_has") is False
+    assert manager.has_paper(user, "10.1234/test.doi") is False
+
+    manager.add_paper(user, paper)
+    assert manager.has_paper(user, "p_has") is True
+    assert manager.has_paper(user, "10.1234/test.doi") is True
+    assert manager.has_paper(user, "p_other") is False
+
