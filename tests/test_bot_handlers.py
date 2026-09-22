@@ -1,9 +1,15 @@
 import pytest
 from aiogram import Router
-from literax.bot.handlers import router, USER_SESSIONS
+from literax.bot.handlers import router, USER_SESSIONS, WELCOME_MESSAGE_TEXT
 from literax.bot.keyboards import get_confirmation_keyboard, get_paper_keyboard
 from literax.models import Paper, Author
 from literax.storage.collection import default_collection_manager
+
+def test_bot_welcome_text_constant():
+    assert "🔬 *Welcome to LiteraX" in WELCOME_MESSAGE_TEXT
+    assert "/search" in WELCOME_MESSAGE_TEXT
+    assert "/matrix" in WELCOME_MESSAGE_TEXT
+    assert "/cite" in WELCOME_MESSAGE_TEXT
 
 def test_bot_router_registration():
     assert isinstance(router, Router)
