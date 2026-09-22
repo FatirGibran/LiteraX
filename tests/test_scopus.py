@@ -6,8 +6,13 @@ from literax.models import SearchQuery
 @pytest.mark.asyncio
 async def test_scopus_provider_no_key():
     provider = ScopusProvider(api_key=None)
+    assert provider.is_authenticated is False
     results = await provider.search(SearchQuery(raw_query="machine learning"))
     assert results == []
+
+def test_scopus_provider_authenticated():
+    provider = ScopusProvider(api_key="valid_scopus_key")
+    assert provider.is_authenticated is True
 
 @pytest.mark.asyncio
 async def test_scopus_provider_search_mock():
