@@ -26,3 +26,12 @@ def get_paper_keyboard(doi: str | None, current_idx: int, total_count: int) -> I
 
     builder.adjust(3, 2)
     return builder.as_markup()
+
+def get_export_format_keyboard() -> InlineKeyboardMarkup:
+    """Generates inline keyboard for selecting collection export format."""
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📄 Markdown", callback_data="exp_fmt:markdown")
+    builder.button(text="📊 CSV", callback_data="exp_fmt:csv")
+    builder.button(text="📚 BibTeX", callback_data="exp_fmt:bibtex")
+    builder.adjust(3)
+    return builder.as_markup()
