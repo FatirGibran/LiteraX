@@ -7,6 +7,12 @@ class ResearchProvider(ABC):
 
     name: str
     requires_auth: bool = False
+    timeout: float = 10.0
+
+    @property
+    def is_authenticated(self) -> bool:
+        """Returns True if the provider has all required credentials configured."""
+        return not self.requires_auth
 
     @abstractmethod
     async def search(self, query: SearchQuery) -> List[Paper]:
