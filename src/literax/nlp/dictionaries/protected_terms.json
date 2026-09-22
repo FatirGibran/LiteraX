@@ -5,5 +5,6 @@
   "covid-19", "sars", "dna", "rna", "crispr", "mri", "ct", "eeg", "ecg",
   "dos", "ddos", "mitm", "sql", "xss", "csrf", "ssl", "tls", "url", "uri", "ip", "dns",
   "transformer", "distilbert", "roberta", "t5", "llama", "mistral",
-  "rag", "lora", "qlora", "mamba", "vit", "yolo", "gpu", "tpu"
+  "rag", "lora", "qlora", "mamba", "vit", "yolo", "gpu", "tpu",
+  "lidar", "radar", "imu", "slam", "fft", "snr", "ble", "nfc"
 ]
