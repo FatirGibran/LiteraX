@@ -100,6 +100,11 @@ class LiteratureMatrix(BaseModel):
     topic: str
     rows: List[LiteratureMatrixRow] = Field(default_factory=list)
 
+    @property
+    def row_count(self) -> int:
+        """Returns the number of rows in the matrix."""
+        return len(self.rows)
+
 class ResearchGapItem(BaseModel):
     """Identified research gap or unexplored intersection in current literature."""
     title: str
