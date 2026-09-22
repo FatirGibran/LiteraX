@@ -6,6 +6,7 @@ def test_find_gaps_empty():
     report = ResearchGapFinder.find_gaps("Blockchain in Healthcare", [])
     assert report.topic == "Blockchain in Healthcare"
     assert len(report.gaps) == 0
+    assert report.total_gaps == 0
 
 def test_find_gaps_with_papers():
     p1 = Paper(
@@ -23,6 +24,7 @@ def test_find_gaps_with_papers():
 
     report = ResearchGapFinder.find_gaps("Intrusion Detection", [p1, p2])
     assert report.topic == "Intrusion Detection"
+    assert report.total_gaps == 3
     assert len(report.gaps) == 3
     categories = [g.category for g in report.gaps]
     assert "Methodology" in categories
