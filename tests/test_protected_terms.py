@@ -9,6 +9,10 @@ def test_protected_terms_default_loader():
     assert mgr.is_protected("bert")
     assert mgr.is_protected("rag")
     assert mgr.is_protected("lora")
+    assert mgr.is_protected("lidar")
+    assert mgr.is_protected("slam")
+    assert mgr.is_protected("fft")
+    assert mgr.is_protected("snr")
 
 def test_protected_terms_hyphenated_variations():
     mgr = ProtectedTermsManager()
