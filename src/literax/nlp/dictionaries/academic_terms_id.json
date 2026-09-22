@@ -43,5 +43,10 @@
   "rekomendasi": "rekomendasi",
   "sentimen": "sentimen",
   "semantik": "semantik",
-  "pengenalan": "pengenalan"
+  "pengenalan": "pengenalan",
+  "statistik": "statistik",
+  "korelasi": "korelasi",
+  "validasi": "validasi",
+  "hipotesis": "hipotesis",
+  "probabilitas": "probabilitas"
 }
