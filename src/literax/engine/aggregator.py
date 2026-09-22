@@ -22,6 +22,15 @@ class PaperAggregator:
             ScopusProvider()
         ]
 
+    @property
+    def provider_names(self) -> List[str]:
+        """Returns the list of configured provider names."""
+        return [p.name for p in self.providers]
+
+    def register_provider(self, provider: ResearchProvider) -> None:
+        """Registers an additional academic data provider."""
+        self.providers.append(provider)
+
     async def search(self, query: SearchQuery) -> List[Paper]:
         """Searches all matching providers concurrently with error containment."""
         active_providers = self.providers
