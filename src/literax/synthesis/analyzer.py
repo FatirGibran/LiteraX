@@ -5,27 +5,29 @@ from literax.models import Paper, PaperAnalysis
 class PaperAnalyzer:
     """Extracts structured research taxonomy from academic abstracts and papers."""
 
+    POTENTIAL_ALGORITHMS: List[str] = [
+        "Random Forest", "SVM", "Support Vector Machine", "CNN", "Convolutional Neural Network",
+        "RNN", "LSTM", "BiLSTM", "BERT", "DistilBERT", "Transformer", "XGBoost", "LightGBM",
+        "CatBoost", "Decision Tree", "Naive Bayes", "KNN", "Deep Learning", "Genetic Algorithm"
+    ]
+
+    POTENTIAL_METRICS: List[str] = [
+        "Accuracy", "Precision", "Recall", "F1-Score", "AUC", "ROC", "Specificity",
+        "Latency", "Throughput", "False Positive Rate", "RMSE", "MAE"
+    ]
+
     @classmethod
     def heuristic_extract(cls, paper: Paper) -> PaperAnalysis:
         """Heuristically decomposes paper fields based on academic NLP cues."""
         text = f"{paper.title}. {paper.abstract or ''}"
         
         # Algorithmic keyword extraction
-        potential_algos = [
-            "Random Forest", "SVM", "Support Vector Machine", "CNN", "Convolutional Neural Network",
-            "RNN", "LSTM", "BiLSTM", "BERT", "DistilBERT", "Transformer", "XGBoost", "LightGBM",
-            "CatBoost", "Decision Tree", "Naive Bayes", "KNN", "Deep Learning", "Genetic Algorithm"
-        ]
-        found_algos = [algo for algo in potential_algos if re.search(r"\b" + re.escape(algo) + r"\b", text, re.I)]
+        found_algos = [algo for algo in cls.POTENTIAL_ALGORITHMS if re.search(r"\b" + re.escape(algo) + r"\b", text, re.I)]
         if not found_algos:
             found_algos = ["Machine Learning Classifier"]
 
         # Metric extraction
-        potential_metrics = [
-            "Accuracy", "Precision", "Recall", "F1-Score", "AUC", "ROC", "Specificity",
-            "Latency", "Throughput", "False Positive Rate", "RMSE", "MAE"
-        ]
-        found_metrics = [m for m in potential_metrics if re.search(r"\b" + re.escape(m) + r"\b", text, re.I)]
+        found_metrics = [m for m in cls.POTENTIAL_METRICS if re.search(r"\b" + re.escape(m) + r"\b", text, re.I)]
         if not found_metrics:
             found_metrics = ["Accuracy", "F1-Score"]
 
