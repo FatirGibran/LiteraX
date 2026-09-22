@@ -33,6 +33,16 @@ class Paper(BaseModel):
         """Returns the name of the first author or 'Anonymous' if empty."""
         return self.authors[0].name if self.authors else "Anonymous"
 
+    @property
+    def is_recent(self) -> bool:
+        """Returns True if the paper was published within the last 3 years (>= 2023)."""
+        return bool(self.year and self.year >= 2023)
+
+    @property
+    def display_title(self) -> str:
+        """Returns cleaned title without surrounding whitespace."""
+        return self.title.strip()
+
 class SearchQuery(BaseModel):
     """Academic search query request payload with filter parameters."""
     raw_query: str
