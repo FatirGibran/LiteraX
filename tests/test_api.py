@@ -94,3 +94,17 @@ def test_api_benchmark_endpoint():
     assert data["expected_unique"] == 5
     assert data["precision"] > 0
     assert data["f1_score"] > 0
+
+
+def test_api_openapi_metadata():
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+    schema = response.json()
+    paths = schema.get("paths", {})
+    assert "/api/v1/search" in paths
+    search_op = paths["/api/v1/search"]["post"]
+    assert "Search & Aggregation" in search_op["tags"]
+    assert search_op["summary"] == "Search and aggregate literature"
+    assert "/api/v1/correct" in paths
+    assert "Fuzzy Search" in paths["/api/v1/correct"]["post"]["tags"]
+
