@@ -7,14 +7,17 @@ def test_paper_properties():
     
     paper_with_doi = Paper(
         id="p1",
-        title="Computing Machinery and Intelligence",
+        title="  Computing Machinery and Intelligence  ",
         doi="10.1093/mind/LIX.236.433",
+        year=2024,
         authors=[author1, author2],
         source="Mind"
     )
     
     assert paper_with_doi.has_doi is True
     assert paper_with_doi.primary_author == "Alan Turing"
+    assert paper_with_doi.is_recent is True
+    assert paper_with_doi.display_title == "Computing Machinery and Intelligence"
 
     paper_without_doi = Paper(
         id="p2",
