@@ -16,6 +16,7 @@ def test_literature_matrix_build_and_exports():
     matrix = LiteratureMatrixBuilder.build_matrix("Attention Models", [p1])
     assert matrix.topic == "Attention Models"
     assert len(matrix.rows) == 1
+    assert matrix.row_count == 1
     assert matrix.rows[0].paper_title == "Transformer for NLP"
 
     md = LiteratureMatrixBuilder.export(matrix, "markdown")
