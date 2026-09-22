@@ -19,6 +19,20 @@ class DedupBenchmarkResult(BaseModel):
     elapsed_seconds: float
     throughput_papers_per_sec: float
 
+    def to_markdown_table(self) -> str:
+        """Formats the benchmark result into a summary Markdown table."""
+        return (
+            "| Metric | Value |\n"
+            "| :--- | :---: |\n"
+            f"| Total Input Papers | {self.total_input} |\n"
+            f"| Expected Unique | {self.expected_unique} |\n"
+            f"| Actual Unique | {self.actual_unique} |\n"
+            f"| Precision | {self.precision * 100:.1f}% |\n"
+            f"| Recall | {self.recall * 100:.1f}% |\n"
+            f"| F1-Score | {self.f1_score * 100:.1f}% |\n"
+            f"| Throughput | {self.throughput_papers_per_sec:.1f} papers/sec |"
+        )
+
 class DeduplicationBenchmarkSuite:
     """Automated benchmark suite for evaluating deduplication accuracy, precision, recall, and throughput."""
 
