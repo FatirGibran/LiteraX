@@ -1,7 +1,7 @@
 import pytest
 from aiogram import Router
 from literax.bot.handlers import router, USER_SESSIONS, WELCOME_MESSAGE_TEXT
-from literax.bot.keyboards import get_confirmation_keyboard, get_paper_keyboard
+from literax.bot.keyboards import get_confirmation_keyboard, get_paper_keyboard, get_export_format_keyboard
 from literax.models import Paper, Author
 from literax.storage.collection import default_collection_manager
 
@@ -25,6 +25,10 @@ def test_bot_keyboards():
     paper_kb = get_paper_keyboard("10.1016/j.cose.2024.103982", 0, 5)
     assert paper_kb is not None
     assert len(paper_kb.inline_keyboard) > 0
+
+    export_kb = get_export_format_keyboard()
+    assert export_kb is not None
+    assert len(export_kb.inline_keyboard[0]) == 3
 
 def test_user_session_and_collection_saving():
     chat_id = 987654321
