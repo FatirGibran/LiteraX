@@ -14,13 +14,13 @@ class PaperAggregator:
     """Coordinates concurrent searches across academic providers, deduplicates, and ranks."""
 
     def __init__(self, providers: Optional[List[ResearchProvider]] = None):
-        self.providers = providers or [
+        self.providers = [
             OpenAlexProvider(),
             CrossrefProvider(),
             SemanticScholarProvider(),
             SintaGarudaProvider(),
             ScopusProvider()
-        ]
+        ] if providers is None else providers
 
     @property
     def provider_names(self) -> List[str]:
