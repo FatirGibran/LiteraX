@@ -17,3 +17,22 @@ def test_dedup_benchmark_execution():
     assert result.f1_score > 0.8
     assert result.throughput_papers_per_sec > 0
     assert result.elapsed_seconds >= 0
+
+def test_dedup_benchmark_to_markdown_table():
+    res = DedupBenchmarkResult(
+        total_input=100,
+        expected_unique=50,
+        actual_unique=50,
+        true_positives=50,
+        false_positives=0,
+        false_negatives=0,
+        precision=1.0,
+        recall=1.0,
+        f1_score=1.0,
+        elapsed_seconds=0.05,
+        throughput_papers_per_sec=2000.0
+    )
+    md = res.to_markdown_table()
+    assert "| Total Input Papers | 100 |" in md
+    assert "| F1-Score | 100.0% |" in md
+    assert "| Throughput | 2000.0 papers/sec |" in md
