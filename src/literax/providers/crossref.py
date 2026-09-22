@@ -13,12 +13,17 @@ class CrossrefProvider(ResearchProvider):
         self.mailto = mailto
         self.base_url = base_url
 
+    @staticmethod
+    def clean_query_string(raw_query: str) -> str:
+        """Sanitizes query string by stripping excess whitespace and control characters."""
+        return " ".join(raw_query.strip().split())
+
     async def search(self, query: SearchQuery) -> List[Paper]:
         headers = {
             "User-Agent": f"LiteraX-Bot/1.0 (mailto:{self.mailto})"
         }
         params = {
-            "query": query.raw_query,
+            "query": self.clean_query_string(query.raw_query),
             "rows": query.limit,
             "select": "DOI,title,author,published-print,published-online,is-referenced-by-count,container-title,abstract"
         }
