@@ -25,6 +25,11 @@ class DoiResolver:
         self.hits: int = 0
         self.misses: int = 0
 
+    @property
+    def supported_styles(self) -> list[str]:
+        """Returns list of supported style keys in content negotiation map."""
+        return list(self.STYLE_ACCEPT_MAP.keys())
+
     @staticmethod
     def normalize_doi(doi: str) -> str:
         """Strips URL prefixes, resolver hosts, and extra whitespace from DOIs."""
