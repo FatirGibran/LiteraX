@@ -9,11 +9,11 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
             KeyboardButton(text="💡 Brainstorm Riset")
         ],
         [
-            KeyboardButton(text="🏛️ Cari Scopus"),
-            KeyboardButton(text="🇮🇩 Cari SINTA")
+            KeyboardButton(text="🏛️ Rekomendasi Scopus Dulu"),
+            KeyboardButton(text="🇮🇩 Rekomendasi SINTA Dulu")
         ],
         [
-            KeyboardButton(text="🎯 Filter & Kategori"),
+            KeyboardButton(text="🎯 Prioritas & Filter"),
             KeyboardButton(text="📚 Paper Tersimpan")
         ],
         [
@@ -44,7 +44,8 @@ def get_paper_keyboard(
     total_count: int,
     direct_url: str | None = None,
     pdf_url: str | None = None,
-    active_filter: str = "all"
+    active_filter: str = "all",
+    active_priority: str = "all"
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
@@ -73,7 +74,13 @@ def get_paper_keyboard(
         builder.button(text="Next ➡️", callback_data=f"nav_page:{current_idx+1}")
         nav_buttons_count += 1
 
-    # Filter toggle button
+    # Priority & filter toggle button
+    prio_label_map = {
+        "scopus": "🏛️ Scopus Dulu",
+        "sinta": "🇮🇩 SINTA Dulu",
+        "openalex": "📖 OpenAlex Dulu",
+        "all": "⚖️ Relevansi"
+    }
     filter_label_map = {
         "all": "🌐 Semua",
         "scopus": "🏛️ Scopus",
@@ -82,8 +89,14 @@ def get_paper_keyboard(
         "oa": "🔓 OpenAccess",
         "recent": "📅 Terbaru"
     }
-    cur_label = filter_label_map.get(active_filter, "🌐 Filter")
-    builder.button(text=f"🎯 Filter Indeks: {cur_label}", callback_data="act_flt_menu:")
+    if active_priority != "all":
+        cur_label = prio_label_map.get(active_priority, active_priority)
+    elif active_filter != "all":
+        cur_label = filter_label_map.get(active_filter, active_filter)
+    else:
+        cur_label = "⚖️ Relevansi"
+
+    builder.button(text=f"🎯 Urutan: {cur_label}", callback_data="act_flt_menu:")
 
     sizes = []
     if link_buttons_count > 0:
@@ -96,25 +109,39 @@ def get_paper_keyboard(
     builder.adjust(*sizes)
     return builder.as_markup()
 
-def get_filter_selection_keyboard(active_filter: str = "all") -> InlineKeyboardMarkup:
-    """Generates inline keyboard for filtering searches by index/category."""
+def get_filter_selection_keyboard(
+    active_priority: str = "all",
+    active_filter: str = "all"
+) -> InlineKeyboardMarkup:
+    """Generates inline keyboard for recommendation priority and index filtering."""
     builder = InlineKeyboardBuilder()
 
-    filters = [
-        ("all", "🌐 Semua Indeks"),
-        ("scopus", "🏛️ Scopus"),
-        ("sinta", "🇮🇩 SINTA / GARUDA"),
-        ("openalex", "📖 OpenAlex"),
-        ("oa", "🔓 Open Access"),
-        ("recent", "📅 Terbaru (>=2023)"),
+    # Section 1: Priority (Urutan Rekomendasi)
+    priority_options = [
+        ("prio_scopus", "🏛️ Scopus Dulu"),
+        ("prio_sinta", "🇮🇩 SINTA Dulu"),
+        ("prio_openalex", "📖 OpenAlex Dulu"),
+        ("prio_all", "⚖️ Relevansi Terbaik"),
     ]
+    for key, label in priority_options:
+        actual = key.replace("prio_", "")
+        indicator = " ✅" if actual == active_priority else ""
+        builder.button(text=f"{label}{indicator}", callback_data=f"flt_set:{key}")
 
-    for key, label in filters:
-        indicator = " ✅" if key == active_filter else ""
+    # Section 2: Strict filters (Filter Eksklusif)
+    filter_options = [
+        ("scopus", "🏛️ Khusus Scopus"),
+        ("sinta", "🇮🇩 Khusus SINTA"),
+        ("oa", "🔓 Khusus Open Access"),
+        ("recent", "📅 Khusus Terbaru (>=2023)"),
+        ("all", "🌐 Reset Semua"),
+    ]
+    for key, label in filter_options:
+        indicator = " ✅" if key == active_filter and active_filter != "all" else ""
         builder.button(text=f"{label}{indicator}", callback_data=f"flt_set:{key}")
 
     builder.button(text="🔍 Mulai Cari Topik", callback_data="flt_close:search")
-    builder.adjust(2, 2, 2, 1)
+    builder.adjust(2, 2, 2, 2, 1, 1)
     return builder.as_markup()
 
 def get_export_format_keyboard() -> InlineKeyboardMarkup:

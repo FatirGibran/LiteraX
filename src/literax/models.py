@@ -109,6 +109,7 @@ class SearchQuery(BaseModel):
     raw_query: str
     expanded_queries: List[str] = Field(default_factory=list)
     providers: Optional[List[str]] = None
+    priority: Optional[str] = None
     year_start: Optional[int] = None
     year_end: Optional[int] = None
     limit: int = 10

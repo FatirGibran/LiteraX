@@ -102,52 +102,90 @@ async def on_menu_search(message: types.Message, state: FSMContext):
         parse_mode=ParseMode.MARKDOWN
     )
 
-@router.message(F.text.in_(["🏛️ Cari Scopus", "🏛️ Scopus"]))
+@router.message(F.text.in_(["🏛️ Rekomendasi Scopus Dulu", "🏛️ Scopus Dulu", "🏛️ Cari Scopus", "🏛️ Scopus"]))
 async def on_menu_scopus(message: types.Message, state: FSMContext):
-    logger.info("🔘 User %s clicked 'Cari Scopus'", message.chat.id)
-    await state.set_state(BotStates.waiting_for_search_query)
-    USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "scopus", "filters": {"providers": ["scopus"]}}
-    await safe_reply(
-        message,
-        "🏛️ *Pencarian Khusus Scopus*\n\n"
-        "Filter aktif: *🏛️ SCOPUS (Internasional Bereputasi)*\n"
-        "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n\n"
-        "_Contoh:_ `zero trust architecture cloud security`",
-        reply_markup=get_main_menu_keyboard(),
-        parse_mode=ParseMode.MARKDOWN
-    )
-
-@router.message(F.text.in_(["🇮🇩 Cari SINTA", "🇮🇩 SINTA", "🇮🇩 SINTA / GARUDA"]))
-async def on_menu_sinta(message: types.Message, state: FSMContext):
-    logger.info("🔘 User %s clicked 'Cari SINTA'", message.chat.id)
-    await state.set_state(BotStates.waiting_for_search_query)
-    USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "sinta", "filters": {"providers": ["sinta"]}}
-    await safe_reply(
-        message,
-        "🇮🇩 *Pencarian Khusus SINTA / GARUDA*\n\n"
-        "Filter aktif: *🇮🇩 SINTA / GARUDA (Jurnal Nasional Terakreditasi)*\n"
-        "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n\n"
-        "_Contoh:_ `sistem pendukung keputusan pemilihan dosen berprestasi`",
-        reply_markup=get_main_menu_keyboard(),
-        parse_mode=ParseMode.MARKDOWN
-    )
-
-@router.message(F.text.in_(["🎯 Filter & Kategori", "🎯 Filter Indeks & Kategori", "🎯 Filter Indeks", "🎯 Kategori"]))
-async def on_menu_filter(message: types.Message):
-    logger.info("🔘 User %s clicked 'Filter & Kategori'", message.chat.id)
+    logger.info("🔘 User %s clicked 'Rekomendasi Scopus Dulu'", message.chat.id)
     chat_id = message.chat.id
+    if chat_id not in USER_SEARCH_CONTEXT:
+        USER_SEARCH_CONTEXT[chat_id] = {}
+    USER_SEARCH_CONTEXT[chat_id]["priority"] = "scopus"
+
+    curr_query = USER_SEARCH_CONTEXT[chat_id].get("query")
+    if curr_query:
+        await safe_reply(
+            message,
+            "🏛️ *Menerapkan Rekomendasi Scopus Dulu...*\n"
+            f"Menyusun ulang hasil pencarian untuk `{curr_query}` dengan Scopus di urutan teratas.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        await execute_search(
+            message,
+            curr_query,
+            priority="scopus",
+            active_filter_key=USER_SEARCH_CONTEXT[chat_id].get("filter", "all")
+        )
+    else:
+        await state.set_state(BotStates.waiting_for_search_query)
+        await safe_reply(
+            message,
+            "🏛️ *Rekomendasi Scopus Dulu Diaktifkan*\n\n"
+            "Paper bereputasi internasional dari **Elsevier Scopus** akan diprioritaskan di urutan teratas (1, 2, 3...).\n\n"
+            "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n"
+            "_Contoh:_ `zero trust architecture cloud security`",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+@router.message(F.text.in_(["🇮🇩 Rekomendasi SINTA Dulu", "🇮🇩 SINTA Dulu", "🇮🇩 Cari SINTA", "🇮🇩 SINTA", "🇮🇩 SINTA / GARUDA"]))
+async def on_menu_sinta(message: types.Message, state: FSMContext):
+    logger.info("🔘 User %s clicked 'Rekomendasi SINTA Dulu'", message.chat.id)
+    chat_id = message.chat.id
+    if chat_id not in USER_SEARCH_CONTEXT:
+        USER_SEARCH_CONTEXT[chat_id] = {}
+    USER_SEARCH_CONTEXT[chat_id]["priority"] = "sinta"
+
+    curr_query = USER_SEARCH_CONTEXT[chat_id].get("query")
+    if curr_query:
+        await safe_reply(
+            message,
+            "🇮🇩 *Menerapkan Rekomendasi SINTA Dulu...*\n"
+            f"Menyusun ulang hasil pencarian untuk `{curr_query}` dengan SINTA di urutan teratas.",
+            parse_mode=ParseMode.MARKDOWN
+        )
+        await execute_search(
+            message,
+            curr_query,
+            priority="sinta",
+            active_filter_key=USER_SEARCH_CONTEXT[chat_id].get("filter", "all")
+        )
+    else:
+        await state.set_state(BotStates.waiting_for_search_query)
+        await safe_reply(
+            message,
+            "🇮🇩 *Rekomendasi SINTA Dulu Diaktifkan*\n\n"
+            "Publikasi dari jurnal nasional terakreditasi **SINTA / GARUDA** akan diprioritaskan di urutan teratas.\n\n"
+            "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n"
+            "_Contoh:_ `sistem pendukung keputusan pemilihan dosen berprestasi`",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+@router.message(F.text.in_(["🎯 Prioritas & Filter", "🎯 Prioritas", "🎯 Filter & Kategori", "🎯 Filter Indeks & Kategori", "🎯 Filter Indeks", "🎯 Kategori"]))
+async def on_menu_filter(message: types.Message):
+    logger.info("🔘 User %s clicked 'Prioritas & Filter'", message.chat.id)
+    chat_id = message.chat.id
+    current_prio = USER_SEARCH_CONTEXT.get(chat_id, {}).get("priority", "all")
     current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
-    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    kb = get_filter_selection_keyboard(active_priority=current_prio, active_filter=current_flt)
     await safe_reply(
         message,
-        "🎯 *Pengaturan Filter Indeks & Kategori Riset*\n\n"
-        "Pilih indeks publikasi atau kategori untuk memfokuskan pencarian Anda:\n\n"
-        "• 🏛️ *Scopus*: Jurnal & prosiding internasional bereputasi\n"
-        "• 🇮🇩 *SINTA / GARUDA*: Jurnal nasional terakreditasi Kemendikbudristek\n"
-        "• 📖 *OpenAlex*: Repositori bibliometrik global terbuka\n"
-        "• 🔓 *Open Access*: Khusus artikel gratis dengan akses PDF langsung\n"
-        "• 📅 *Terbaru*: Khusus publikasi mutakhir (>= 2023)\n\n"
-        f"Filter aktif saat ini: *{current_flt.upper()}*",
+        "🎯 *Pengaturan Urutan Rekomendasi & Filter Indeks*\n\n"
+        "Silakan pilih prioritas urutan rekomendasi yang Anda inginkan:\n"
+        "• 🏛️ *Scopus Dulu*: Tampilkan artikel Scopus di urutan paling atas\n"
+        "• 🇮🇩 *SINTA Dulu*: Tampilkan jurnal SINTA/GARUDA di urutan paling atas\n"
+        "• 📖 *OpenAlex Dulu*: Tampilkan publikasi OpenAlex di urutan paling atas\n"
+        "• ⚖️ *Relevansi Terbaik*: Urutkan murni berdasarkan skor relevansi tertinggi\n\n"
+        f"Prioritas aktif saat ini: *{current_prio.upper()}* | Filter: *{current_flt.upper()}*",
         reply_markup=kb,
         parse_mode=ParseMode.MARKDOWN
     )
@@ -245,24 +283,24 @@ async def on_state_gap_topic(message: types.Message, state: FSMContext):
 # 4. Search Commands & Logic
 # ------------------------------------------------------------------------------
 
-@router.message(Command("filter", "indeks", "sumber"))
+@router.message(Command("filter", "indeks", "sumber", "priority", "prioritas", "urutan"))
 async def cmd_filter(message: types.Message):
-    logger.info("🎯 User %s called /filter", message.chat.id)
+    logger.info("🎯 User %s called /filter or /priority", message.chat.id)
     chat_id = message.chat.id
+    current_prio = USER_SEARCH_CONTEXT.get(chat_id, {}).get("priority", "all")
     current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
-    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    kb = get_filter_selection_keyboard(active_priority=current_prio, active_filter=current_flt)
     await safe_reply(
         message,
-        "🎯 *Pengaturan Filter Indeks & Kategori*\n\n"
-        "Pilih indeks atau kriteria yang Anda inginkan untuk memfokuskan hasil riset:\n\n"
-        "• 🏛️ *Scopus*: Publikasi jurnal & prosiding internasional bereputasi\n"
-        "• 🇮🇩 *SINTA*: Jurnal terakreditasi nasional Indonesia (GARUDA / SINTA)\n"
-        "• 📖 *OpenAlex*: Repositori bibliografi terbuka universal\n"
-        "• 🔓 *Open Access*: Artikel dengan akses dokumen penuh (Direct PDF)\n"
-        "• 📅 *Terbaru*: Khusus publikasi tahun 2023 ke atas\n\n"
-        "💡 *Tips:* Anda juga dapat menggunakan perintah langsung seperti:\n"
-        "`/scopus <topik>` atau `/sinta <topik>`\n"
-        "atau ketik langsung di chat: `scopus: <topik>`",
+        "🎯 *Pengaturan Urutan Rekomendasi & Filter Indeks*\n\n"
+        "Silakan tentukan prioritas urutan rekomendasi atau filter yang diinginkan:\n\n"
+        "⭐ *Prioritas Rekomendasi:*\n"
+        "• 🏛️ *Scopus Dulu*: Tampilkan artikel Scopus di urutan paling awal (1, 2, 3...)\n"
+        "• 🇮🇩 *SINTA Dulu*: Tampilkan jurnal SINTA / GARUDA di urutan paling awal\n"
+        "• 📖 *OpenAlex Dulu*: Tampilkan repositori OpenAlex di urutan paling awal\n"
+        "• ⚖️ *Relevansi Terbaik*: Urutkan murni berdasarkan skor relevansi tertinggi\n\n"
+        "🎯 *Filter Eksklusif:*\n"
+        "• 🏛️ *Khusus Scopus* | 🇮🇩 *Khusus SINTA* | 🔓 *Open Access*",
         reply_markup=kb,
         parse_mode=ParseMode.MARKDOWN
     )
@@ -337,15 +375,20 @@ async def process_search_query(
     message: types.Message,
     raw_query: str,
     extra_filters: dict | None = None,
-    active_filter_key: str | None = None
+    active_filter_key: str | None = None,
+    priority: str | None = None
 ):
-    logger.info("🔎 Searching query from user %s: '%s' (extra_filters=%s)", message.chat.id, raw_query, extra_filters)
+    logger.info("🔎 Searching query from user %s: '%s' (extra_filters=%s, priority=%s)", message.chat.id, raw_query, extra_filters, priority)
     try:
-        # Step 0: Extract syntax filters (e.g. scopus:, sinta:, oa:, year:2024)
+        # Step 0: Extract syntax filters (e.g. scopus:, sinta:, oa:, year:2024, scopus dulu:)
         clean_query, extracted_filters = QueryNormalizer.extract_filters(raw_query)
 
         saved_ctx = USER_SEARCH_CONTEXT.get(message.chat.id, {})
         saved_flt = saved_ctx.get("filter", "all")
+        saved_prio = saved_ctx.get("priority", "all")
+
+        # Determine effective priority
+        eff_priority = priority or extracted_filters.get("priority") or (extra_filters.get("priority") if extra_filters else None) or saved_prio
 
         # Determine effective filters and active_filter_key
         if extracted_filters:
@@ -395,6 +438,7 @@ async def process_search_query(
         await execute_search(
             message,
             search_term,
+            priority=eff_priority,
             filters=merged_filters,
             active_filter_key=flt_key,
             correction=correction if correction.action == "AUTO_CORRECTED" else None
@@ -406,6 +450,7 @@ async def process_search_query(
 async def execute_search(
     message: types.Message,
     search_term: str,
+    priority: str = "all",
     filters: dict | None = None,
     active_filter_key: str = "all",
     correction=None,
@@ -415,6 +460,12 @@ async def execute_search(
     if correction:
         info_msg = f"🔎 *Koreksi Kata Kunci:* `{correction.corrected_query}` (Akurasi: {int(correction.overall_confidence * 100)}%)\n\n"
 
+    prio_label_map = {
+        "scopus": "🏛️ Scopus Dulu",
+        "sinta": "🇮🇩 SINTA Dulu",
+        "openalex": "📖 OpenAlex Dulu",
+        "all": "⚖️ Relevansi Terbaik"
+    }
     filter_label_map = {
         "all": "OpenAlex, Scopus, Crossref, dan SINTA",
         "scopus": "🏛️ Scopus (International Indexed)",
@@ -424,7 +475,8 @@ async def execute_search(
         "recent": "📅 Publikasi Terbaru (>= 2023)"
     }
     src_label = filter_label_map.get(active_filter_key, "Multi-sumber")
-    prompt_text = f"{info_msg}⚡ Mencari di {src_label}..."
+    prio_text = f" (Urutan: *{prio_label_map.get(priority, priority)}*)" if priority != "all" else ""
+    prompt_text = f"{info_msg}⚡ Mencari di {src_label}{prio_text}..."
 
     if edit_message:
         status_msg = edit_message
@@ -436,8 +488,10 @@ async def execute_search(
         status_msg = await safe_reply(message, prompt_text, parse_mode=ParseMode.MARKDOWN)
 
     try:
-        # Step 2: Multi-source search with optional filters
+        # Step 2: Multi-source search with optional filters and priority
         query_kwargs = {"raw_query": search_term, "limit": 5}
+        if priority and priority != "all":
+            query_kwargs["priority"] = priority
         if filters:
             if "providers" in filters:
                 query_kwargs["providers"] = filters["providers"]
@@ -454,6 +508,7 @@ async def execute_search(
         chat_id = message.chat.id
         USER_SEARCH_CONTEXT[chat_id] = {
             "query": search_term,
+            "priority": priority,
             "filter": active_filter_key,
             "filters": filters or {}
         }
@@ -472,6 +527,7 @@ async def execute_search(
             papers,
             index=0,
             active_filter=active_filter_key,
+            active_priority=priority,
             edit_message=status_msg
         )
     except Exception as e:
@@ -487,6 +543,7 @@ async def send_paper_result(
     papers: list[Paper],
     index: int,
     active_filter: str = "all",
+    active_priority: str = "all",
     edit_message: types.Message | None = None
 ):
     paper = papers[index]
@@ -503,6 +560,12 @@ async def send_paper_result(
         links.append(f"[Web Portal]({paper.landing_page_url})")
     link_display = " • ".join(links) if links else "`Link publik belum terindeks`"
 
+    prio_label_map = {
+        "scopus": "🏛️ Scopus Dulu",
+        "sinta": "🇮🇩 SINTA Dulu",
+        "openalex": "📖 OpenAlex Dulu",
+        "all": "⚖️ Relevansi"
+    }
     filter_label_map = {
         "all": "Semua Indeks",
         "scopus": "Scopus",
@@ -511,10 +574,16 @@ async def send_paper_result(
         "oa": "Open Access",
         "recent": "Terbaru"
     }
-    filter_badge = f" | 🎯 `{filter_label_map.get(active_filter, active_filter)}`" if active_filter != "all" else ""
+
+    badge_items = []
+    if active_priority != "all":
+        badge_items.append(f"⭐ `{prio_label_map.get(active_priority, active_priority)}`")
+    if active_filter != "all":
+        badge_items.append(f"🎯 `{filter_label_map.get(active_filter, active_filter)}`")
+    badge_str = f" | {' • '.join(badge_items)}" if badge_items else ""
 
     text = (
-        f"📚 *HASIL PENCARIAN ({index + 1}/{len(papers)})*{filter_badge}\n"
+        f"📚 *HASIL PENCARIAN ({index + 1}/{len(papers)})*{badge_str}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"📄 *{paper.title}*\n"
         f"👤 *Penulis:* {authors_str}\n"
@@ -531,7 +600,8 @@ async def send_paper_result(
         total_count=len(papers),
         direct_url=paper.direct_url,
         pdf_url=paper.full_text_url,
-        active_filter=active_filter
+        active_filter=active_filter,
+        active_priority=active_priority
     )
     if edit_message:
         try:
@@ -539,9 +609,10 @@ async def send_paper_result(
         except Exception:
             # Fallback without markdown if title/abstract has entity conflicts
             plain_link = paper.direct_url or "Belum tersedia"
+            plain_prio = f" | Urutan: {prio_label_map.get(active_priority, active_priority)}" if active_priority != "all" else ""
             plain_badge = f" | Filter: {filter_label_map.get(active_filter, active_filter)}" if active_filter != "all" else ""
             fallback_text = (
-                f"📚 HASIL PENCARIAN ({index + 1}/{len(papers)}){plain_badge}\n"
+                f"📚 HASIL PENCARIAN ({index + 1}/{len(papers)}){plain_prio}{plain_badge}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📄 {paper.title}\n"
                 f"👤 Penulis: {authors_str}\n"
@@ -786,6 +857,7 @@ async def on_search_corrected(callback: types.CallbackQuery):
     corr_term = callback.data.split(":", 1)[1]
     chat_id = callback.message.chat.id
     saved_ctx = USER_SEARCH_CONTEXT.get(chat_id, {})
+    prio_key = saved_ctx.get("priority", "all")
     flt_key = saved_ctx.get("filter", "all")
     filters = saved_ctx.get("filters", {})
     try:
@@ -795,6 +867,7 @@ async def on_search_corrected(callback: types.CallbackQuery):
     await execute_search(
         callback.message,
         corr_term,
+        priority=prio_key,
         filters=filters,
         active_filter_key=flt_key,
         edit_message=callback.message
@@ -806,6 +879,7 @@ async def on_search_raw(callback: types.CallbackQuery):
     raw_term = callback.data.split(":", 1)[1]
     chat_id = callback.message.chat.id
     saved_ctx = USER_SEARCH_CONTEXT.get(chat_id, {})
+    prio_key = saved_ctx.get("priority", "all")
     flt_key = saved_ctx.get("filter", "all")
     filters = saved_ctx.get("filters", {})
     try:
@@ -815,6 +889,7 @@ async def on_search_raw(callback: types.CallbackQuery):
     await execute_search(
         callback.message,
         raw_term,
+        priority=prio_key,
         filters=filters,
         active_filter_key=flt_key,
         edit_message=callback.message
@@ -827,12 +902,14 @@ async def on_nav_page(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
     papers = USER_SESSIONS.get(chat_id, [])
     active_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
+    active_prio = USER_SEARCH_CONTEXT.get(chat_id, {}).get("priority", "all")
     if 0 <= idx < len(papers):
         await send_paper_result(
             callback.message,
             papers,
             index=idx,
             active_filter=active_flt,
+            active_priority=active_prio,
             edit_message=callback.message
         )
     await callback.answer()
@@ -840,18 +917,20 @@ async def on_nav_page(callback: types.CallbackQuery):
 @router.callback_query(F.data == "act_flt_menu:")
 async def on_filter_menu_callback(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
+    current_prio = USER_SEARCH_CONTEXT.get(chat_id, {}).get("priority", "all")
     current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
-    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    kb = get_filter_selection_keyboard(active_priority=current_prio, active_filter=current_flt)
     await safe_reply(
         callback.message,
-        "🎯 *Filter Indeks & Kategori Riset*\n\n"
-        "Pilih indeks publikasi atau kategori untuk memfilter hasil pencarian:\n"
-        "• 🏛️ *Scopus*: Jurnal & prosiding internasional terindeks Scopus\n"
-        "• 🇮🇩 *SINTA / GARUDA*: Jurnal nasional terakreditasi Kemdikbudristek\n"
-        "• 📖 *OpenAlex*: Basis data bibliometrik global terbuka\n"
-        "• 🔓 *Open Access*: Artikel gratis dapat diunduh (PDF langsung)\n"
-        "• 📅 *Terbaru*: Khusus publikasi mutakhir (>= 2023)\n\n"
-        f"Status aktif: *{current_flt.upper()}*",
+        "🎯 *Pengaturan Urutan Rekomendasi & Filter Indeks*\n\n"
+        "Silakan tentukan prioritas rekomendasi hasil riset Anda:\n\n"
+        "⭐ *Urutan Rekomendasi:*\n"
+        "• 🏛️ *Scopus Dulu*: Tampilkan artikel Scopus di urutan 1, 2, 3...\n"
+        "• 🇮🇩 *SINTA Dulu*: Tampilkan jurnal SINTA/GARUDA di urutan 1, 2, 3...\n"
+        "• 📖 *OpenAlex Dulu*: Tampilkan publikasi OpenAlex di urutan teratas\n"
+        "• ⚖️ *Relevansi Terbaik*: Urutkan murni berdasarkan skor relevansi\n\n"
+        "🎯 *Filter Eksklusif:*\n"
+        "• 🏛️ *Khusus Scopus* | 🇮🇩 *Khusus SINTA* | 🔓 *Open Access*",
         reply_markup=kb,
         parse_mode=ParseMode.MARKDOWN
     )
@@ -863,42 +942,61 @@ async def on_filter_set_callback(callback: types.CallbackQuery):
     chat_id = callback.message.chat.id
     if chat_id not in USER_SEARCH_CONTEXT:
         USER_SEARCH_CONTEXT[chat_id] = {}
-    USER_SEARCH_CONTEXT[chat_id]["filter"] = key
 
+    current_prio = USER_SEARCH_CONTEXT[chat_id].get("priority", "all")
+    current_flt = USER_SEARCH_CONTEXT[chat_id].get("filter", "all")
+    extra_filters = USER_SEARCH_CONTEXT[chat_id].get("filters", {})
+
+    prio_label_map = {
+        "scopus": "🏛️ Scopus Dulu",
+        "sinta": "🇮🇩 SINTA Dulu",
+        "openalex": "📖 OpenAlex Dulu",
+        "all": "⚖️ Relevansi Terbaik"
+    }
     filter_label_map = {
         "all": "🌐 Semua Indeks",
-        "scopus": "🏛️ Scopus",
-        "sinta": "🇮🇩 SINTA / GARUDA",
-        "openalex": "📖 OpenAlex",
-        "oa": "🔓 Open Access",
-        "recent": "📅 Terbaru (>=2023)"
+        "scopus": "🏛️ Khusus Scopus",
+        "sinta": "🇮🇩 Khusus SINTA",
+        "oa": "🔓 Khusus Open Access",
+        "recent": "📅 Khusus Terbaru (>=2023)"
     }
-    label = filter_label_map.get(key, key)
 
-    extra_filters = {}
-    if key in ["scopus", "sinta", "openalex"]:
-        extra_filters["providers"] = [key]
-    elif key == "oa":
-        extra_filters["open_access_only"] = True
-    elif key == "recent":
-        extra_filters["year_start"] = 2023
-    USER_SEARCH_CONTEXT[chat_id]["filters"] = extra_filters
+    if key.startswith("prio_"):
+        new_prio = key.replace("prio_", "")
+        USER_SEARCH_CONTEXT[chat_id]["priority"] = new_prio
+        current_prio = new_prio
+        label = f"Prioritas Urutan: {prio_label_map.get(new_prio, new_prio)}"
+    else:
+        USER_SEARCH_CONTEXT[chat_id]["filter"] = key
+        current_flt = key
+        extra_filters = {}
+        if key in ["scopus", "sinta", "openalex"]:
+            extra_filters["providers"] = [key]
+        elif key == "oa":
+            extra_filters["open_access_only"] = True
+        elif key == "recent":
+            extra_filters["year_start"] = 2023
+        elif key == "all":
+            extra_filters = {}
+        USER_SEARCH_CONTEXT[chat_id]["filters"] = extra_filters
+        label = f"Filter: {filter_label_map.get(key, key)}"
 
     current_query = USER_SEARCH_CONTEXT[chat_id].get("query")
     if current_query:
-        await callback.answer(f"Menerapkan filter: {label}")
+        await callback.answer(f"Menerapkan: {label}")
         await execute_search(
             callback.message,
             current_query,
+            priority=current_prio,
             filters=extra_filters,
-            active_filter_key=key,
+            active_filter_key=current_flt,
             edit_message=callback.message
         )
     else:
-        await callback.answer(f"Filter diset: {label}")
+        await callback.answer(f"Diset: {label}")
         await safe_reply(
             callback.message,
-            f"✅ Filter aktif diset ke: *{label}*\n\nSilakan ketik topik riset yang ingin Anda cari:",
+            f"✅ *Pengaturan Berhasil!*\n{label}\n\nSilakan ketik topik riset yang ingin Anda cari:",
             reply_markup=get_main_menu_keyboard(),
             parse_mode=ParseMode.MARKDOWN
         )

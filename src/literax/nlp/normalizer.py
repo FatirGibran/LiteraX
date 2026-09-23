@@ -70,6 +70,17 @@ class QueryNormalizer:
         clean_text = query.strip()
         filters: dict = {}
 
+        # 0. Recommendation Priority (e.g. scopus dulu:, sinta dulu:, priority:scopus, scopus first:)
+        prio_match = re.search(
+            r"\b(?:priority|prioritas|utamakan|prefer):\s*([a-zA-Z0-9_\-]+)\b|\b(scopus|sinta|garuda|openalex)\s+(?:dulu|first|terlebih\s+dahulu):\s*",
+            clean_text,
+            flags=re.IGNORECASE
+        )
+        if prio_match:
+            p_val = (prio_match.group(1) or prio_match.group(2)).lower()
+            filters["priority"] = "sinta" if p_val in ["garuda", "sinta"] else p_val
+            clean_text = clean_text[:prio_match.start()] + " " + clean_text[prio_match.end():]
+
         # 1. Provider / Index filter (e.g. scopus:, sinta:, garuda:, source:scopus)
         provider_match = re.search(
             r"\b(?:provider|source|indeks|index|db):\s*([a-zA-Z0-9_\-]+)\b|\b(scopus|sinta|garuda|openalex|crossref|semanticscholar):\s*",

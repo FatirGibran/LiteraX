@@ -58,9 +58,22 @@ class RelevanceRanker:
         return min(1.0, round(composite, 3))
 
     @classmethod
-    def rank(cls, query: str, papers: List[Paper]) -> List[Paper]:
-        """Calculates relevance scores and sorts papers in descending order."""
+    def rank(cls, query: str, papers: List[Paper], priority: Optional[str] = None) -> List[Paper]:
+        """Calculates relevance scores and sorts papers in descending order with optional index prioritization."""
         for p in papers:
             p.composite_relevance = cls.calculate_score(query, p)
 
-        return sorted(papers, key=lambda x: x.composite_relevance, reverse=True)
+        if not priority or priority.lower() in ["all", "none"]:
+            return sorted(papers, key=lambda x: x.composite_relevance, reverse=True)
+
+        priority_lower = priority.lower()
+
+        def priority_sort_key(p: Paper):
+            src = p.source.lower()
+            if priority_lower in ["sinta", "garuda"]:
+                is_preferred = 1 if ("sinta" in src or "garuda" in src) else 0
+            else:
+                is_preferred = 1 if priority_lower in src else 0
+            return (is_preferred, p.composite_relevance)
+
+        return sorted(papers, key=priority_sort_key, reverse=True)

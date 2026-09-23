@@ -29,9 +29,9 @@ def test_bot_keyboards():
     all_buttons = [btn.text for row in main_kb.keyboard for btn in row]
     assert "🔍 Cari Paper" in all_buttons
     assert "💡 Brainstorm Riset" in all_buttons
-    assert "🏛️ Cari Scopus" in all_buttons
-    assert "🇮🇩 Cari SINTA" in all_buttons
-    assert "🎯 Filter & Kategori" in all_buttons
+    assert "🏛️ Rekomendasi Scopus Dulu" in all_buttons
+    assert "🇮🇩 Rekomendasi SINTA Dulu" in all_buttons
+    assert "🎯 Prioritas & Filter" in all_buttons
 
     conf_kb = get_confirmation_keyboard("machine learning", "machin lerning")
     assert conf_kb is not None
@@ -96,31 +96,34 @@ def test_filter_keyboards():
     from literax.bot.keyboards import get_filter_selection_keyboard
 
     # Test default filter keyboard
-    flt_kb = get_filter_selection_keyboard(active_filter="all")
+    flt_kb = get_filter_selection_keyboard(active_priority="all", active_filter="all")
     assert flt_kb is not None
     button_callbacks = [btn.callback_data for row in flt_kb.inline_keyboard for btn in row if btn.callback_data]
-    assert "flt_set:all" in button_callbacks
+    assert "flt_set:prio_scopus" in button_callbacks
+    assert "flt_set:prio_sinta" in button_callbacks
+    assert "flt_set:prio_openalex" in button_callbacks
+    assert "flt_set:prio_all" in button_callbacks
     assert "flt_set:scopus" in button_callbacks
     assert "flt_set:sinta" in button_callbacks
-    assert "flt_set:openalex" in button_callbacks
     assert "flt_set:oa" in button_callbacks
     assert "flt_set:recent" in button_callbacks
+    assert "flt_set:all" in button_callbacks
     assert "flt_close:search" in button_callbacks
 
-    # Test scopus active indicator
-    scopus_kb = get_filter_selection_keyboard(active_filter="scopus")
-    scopus_btn = next(btn for row in scopus_kb.inline_keyboard for btn in row if btn.callback_data == "flt_set:scopus")
+    # Test scopus priority active indicator
+    scopus_kb = get_filter_selection_keyboard(active_priority="scopus")
+    scopus_btn = next(btn for row in scopus_kb.inline_keyboard for btn in row if btn.callback_data == "flt_set:prio_scopus")
     assert "✅" in scopus_btn.text
 
-    # Test get_paper_keyboard with active filter
+    # Test get_paper_keyboard with active priority
     paper_kb = get_paper_keyboard(
         doi="10.1016/j.cose.2024.103982",
         current_idx=0,
         total_count=3,
-        active_filter="scopus"
+        active_priority="scopus"
     )
     filter_btn = next(btn for row in paper_kb.inline_keyboard for btn in row if btn.callback_data == "act_flt_menu:")
-    assert "Scopus" in filter_btn.text
+    assert "Scopus Dulu" in filter_btn.text
 
 @pytest.mark.asyncio
 async def test_filter_commands_and_sessions():
@@ -141,7 +144,7 @@ async def test_filter_commands_and_sessions():
     await cmd_filter(mock_msg)
     assert mock_msg.reply.call_count == 1
     call_args = mock_msg.reply.call_args[0][0]
-    assert "Filter Indeks & Kategori" in call_args
+    assert "Prioritas" in call_args or "Filter Indeks" in call_args
 
     # 2. Test /scopus without args (sets pending state)
     mock_msg_scopus = MagicMock()
@@ -198,24 +201,24 @@ async def test_filter_callbacks():
     assert mock_cb.message.reply.call_count == 1
     assert mock_cb.answer.call_count == 1
 
-    # 2. Test flt_set:scopus without active query
+    # 2. Test flt_set:prio_scopus without active query
     USER_SEARCH_CONTEXT.pop(77777, None)
     mock_set_cb = MagicMock()
-    mock_set_cb.data = "flt_set:scopus"
+    mock_set_cb.data = "flt_set:prio_scopus"
     mock_set_cb.message.chat.id = 77777
     mock_set_cb.message.reply = AsyncMock(return_value=True)
     mock_set_cb.answer = AsyncMock()
 
     await on_filter_set_callback(mock_set_cb)
-    assert USER_SEARCH_CONTEXT[77777]["filter"] == "scopus"
+    assert USER_SEARCH_CONTEXT[77777]["priority"] == "scopus"
     assert mock_set_cb.answer.call_count == 1
 
-    # 3. Test flt_set:sinta with active query re-executes search
+    # 3. Test flt_set:prio_sinta with active query re-executes search with priority="sinta"
     USER_SEARCH_CONTEXT[77777]["query"] = "machine learning"
     with patch("literax.bot.handlers.aggregator.search", new_callable=AsyncMock) as mock_search:
         mock_search.return_value = []
         mock_set_active_cb = MagicMock()
-        mock_set_active_cb.data = "flt_set:sinta"
+        mock_set_active_cb.data = "flt_set:prio_sinta"
         mock_set_active_cb.message.chat.id = 77777
         mock_set_active_cb.message.edit_text = AsyncMock()
         mock_set_active_cb.answer = AsyncMock()
@@ -223,7 +226,7 @@ async def test_filter_callbacks():
         await on_filter_set_callback(mock_set_active_cb)
         assert mock_search.call_count == 1
         query_arg = mock_search.call_args[0][0]
-        assert query_arg.providers == ["sinta"]
+        assert query_arg.priority == "sinta"
 
     # 4. Test flt_close:search
     mock_close_cb = MagicMock()
@@ -251,32 +254,34 @@ async def test_menu_button_handlers():
     mock_state = MagicMock()
     mock_state.set_state = AsyncMock()
 
-    # 1. Test clicking 'Cari Scopus' menu button
+    # 1. Test clicking 'Rekomendasi Scopus Dulu' menu button
+    USER_SEARCH_CONTEXT.pop(99911, None)
     mock_msg_scopus = MagicMock()
     mock_msg_scopus.chat.id = 99911
     mock_msg_scopus.reply = AsyncMock(return_value=True)
 
     await on_menu_scopus(mock_msg_scopus, state=mock_state)
-    assert USER_SEARCH_CONTEXT[99911]["filter"] == "scopus"
+    assert USER_SEARCH_CONTEXT[99911]["priority"] == "scopus"
     assert mock_state.set_state.call_count == 1
     assert mock_msg_scopus.reply.call_count == 1
-    assert "SCOPUS" in mock_msg_scopus.reply.call_args[0][0]
+    assert "Scopus" in mock_msg_scopus.reply.call_args[0][0]
 
-    # 2. Test clicking 'Cari SINTA' menu button
+    # 2. Test clicking 'Rekomendasi SINTA Dulu' menu button
+    USER_SEARCH_CONTEXT.pop(99922, None)
     mock_msg_sinta = MagicMock()
     mock_msg_sinta.chat.id = 99922
     mock_msg_sinta.reply = AsyncMock(return_value=True)
 
     await on_menu_sinta(mock_msg_sinta, state=mock_state)
-    assert USER_SEARCH_CONTEXT[99922]["filter"] == "sinta"
+    assert USER_SEARCH_CONTEXT[99922]["priority"] == "sinta"
     assert "SINTA / GARUDA" in mock_msg_sinta.reply.call_args[0][0]
 
-    # 3. Test clicking 'Filter & Kategori' menu button
+    # 3. Test clicking 'Prioritas & Filter' menu button
     mock_msg_flt = MagicMock()
     mock_msg_flt.chat.id = 99933
     mock_msg_flt.reply = AsyncMock(return_value=True)
 
     await on_menu_filter(mock_msg_flt)
     assert mock_msg_flt.reply.call_count == 1
-    assert "Filter Indeks & Kategori" in mock_msg_flt.reply.call_args[0][0]
+    assert "Rekomendasi & Filter" in mock_msg_flt.reply.call_args[0][0]
 

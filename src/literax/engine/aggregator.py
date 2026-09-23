@@ -79,7 +79,7 @@ class PaperAggregator:
                 if p.year is None or p.year <= query.year_end
             ]
 
-        # Rank
-        ranked_papers = RelevanceRanker.rank(query.raw_query, unique_papers)
+        # Rank with priority if specified
+        ranked_papers = RelevanceRanker.rank(query.raw_query, unique_papers, priority=query.priority)
 
         return ranked_papers[:query.limit]

@@ -56,3 +56,17 @@ def test_extract_filters():
     q6, f6 = QueryNormalizer.extract_filters("transformer attention")
     assert q6 == "transformer attention"
     assert f6 == {}
+
+    # 7. Priority prefixes
+    q7, f7 = QueryNormalizer.extract_filters("scopus dulu: federated learning")
+    assert q7 == "federated learning"
+    assert f7.get("priority") == "scopus"
+
+    q8, f8 = QueryNormalizer.extract_filters("sinta first: deteksi kecurangan")
+    assert q8 == "deteksi kecurangan"
+    assert f8.get("priority") == "sinta"
+
+    q9, f9 = QueryNormalizer.extract_filters("priority:openalex knowledge graph")
+    assert q9 == "knowledge graph"
+    assert f9.get("priority") == "openalex"
+
