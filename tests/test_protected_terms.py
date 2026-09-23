@@ -4,6 +4,8 @@ from literax.nlp.protected_terms import ProtectedTermsManager
 def test_protected_terms_default_loader():
     mgr = ProtectedTermsManager()
     assert len(mgr.protected_terms) > 0
+    assert mgr.total_terms == len(mgr.protected_terms)
+    assert mgr.total_terms > 10
     assert mgr.is_protected("svm")
     assert mgr.is_protected("SVM")
     assert mgr.is_protected("bert")
