@@ -64,3 +64,15 @@ def test_user_session_and_collection_saving():
     # Clean up
     default_collection_manager.clear_collection(str(chat_id))
     assert default_collection_manager.count(str(chat_id)) == 0
+
+@pytest.mark.asyncio
+async def test_safe_reply_helper():
+    from unittest.mock import AsyncMock, MagicMock
+    from literax.bot.handlers import safe_reply
+
+    mock_msg = MagicMock()
+    mock_msg.reply = AsyncMock(return_value=True)
+
+    res = await safe_reply(mock_msg, "*Test message*")
+    assert res is True
+    assert mock_msg.reply.call_count == 1
