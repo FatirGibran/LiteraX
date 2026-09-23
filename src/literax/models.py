@@ -7,6 +7,16 @@ class Author(BaseModel):
     affiliation: Optional[str] = None
     orcid: Optional[str] = None
 
+    @property
+    def display_name(self) -> str:
+        """Returns author name stripped of whitespace."""
+        return self.name.strip()
+
+    @property
+    def has_affiliation(self) -> bool:
+        """Returns True if the author has non-empty affiliation."""
+        return bool(self.affiliation and self.affiliation.strip())
+
 class Paper(BaseModel):
     """Core academic paper metadata model unified across all providers."""
     id: str
