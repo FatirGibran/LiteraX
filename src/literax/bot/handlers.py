@@ -92,18 +92,69 @@ async def cmd_start(message: types.Message, state: FSMContext | None = None):
 async def on_menu_search(message: types.Message, state: FSMContext):
     logger.info("🔘 User %s clicked 'Cari Paper'", message.chat.id)
     await state.set_state(BotStates.waiting_for_search_query)
+    USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "all", "filters": {}}
     await safe_reply(
         message,
-        "🔍 *Pencarian Paper Ilmiah*\n\n"
+        "🔍 *Pencarian Paper Ilmiah (Semua Indeks)*\n\n"
         "Silakan ketik kata kunci, judul, atau topik riset yang ingin dicari:\n\n"
         "_Contoh:_ `pengaruh media sosial terhadap partisipasi pemilu`",
         reply_markup=get_main_menu_keyboard(),
         parse_mode=ParseMode.MARKDOWN
     )
 
-@router.message(F.text.in_(["💡 Brainstorm Ide Riset", "💡 Brainstorming", "💡 Ide Riset"]))
+@router.message(F.text.in_(["🏛️ Cari Scopus", "🏛️ Scopus"]))
+async def on_menu_scopus(message: types.Message, state: FSMContext):
+    logger.info("🔘 User %s clicked 'Cari Scopus'", message.chat.id)
+    await state.set_state(BotStates.waiting_for_search_query)
+    USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "scopus", "filters": {"providers": ["scopus"]}}
+    await safe_reply(
+        message,
+        "🏛️ *Pencarian Khusus Scopus*\n\n"
+        "Filter aktif: *🏛️ SCOPUS (Internasional Bereputasi)*\n"
+        "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n\n"
+        "_Contoh:_ `zero trust architecture cloud security`",
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+@router.message(F.text.in_(["🇮🇩 Cari SINTA", "🇮🇩 SINTA", "🇮🇩 SINTA / GARUDA"]))
+async def on_menu_sinta(message: types.Message, state: FSMContext):
+    logger.info("🔘 User %s clicked 'Cari SINTA'", message.chat.id)
+    await state.set_state(BotStates.waiting_for_search_query)
+    USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "sinta", "filters": {"providers": ["sinta"]}}
+    await safe_reply(
+        message,
+        "🇮🇩 *Pencarian Khusus SINTA / GARUDA*\n\n"
+        "Filter aktif: *🇮🇩 SINTA / GARUDA (Jurnal Nasional Terakreditasi)*\n"
+        "Silakan ketik kata kunci atau topik riset yang ingin dicari:\n\n"
+        "_Contoh:_ `sistem pendukung keputusan pemilihan dosen berprestasi`",
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+@router.message(F.text.in_(["🎯 Filter & Kategori", "🎯 Filter Indeks & Kategori", "🎯 Filter Indeks", "🎯 Kategori"]))
+async def on_menu_filter(message: types.Message):
+    logger.info("🔘 User %s clicked 'Filter & Kategori'", message.chat.id)
+    chat_id = message.chat.id
+    current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
+    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    await safe_reply(
+        message,
+        "🎯 *Pengaturan Filter Indeks & Kategori Riset*\n\n"
+        "Pilih indeks publikasi atau kategori untuk memfokuskan pencarian Anda:\n\n"
+        "• 🏛️ *Scopus*: Jurnal & prosiding internasional bereputasi\n"
+        "• 🇮🇩 *SINTA / GARUDA*: Jurnal nasional terakreditasi Kemendikbudristek\n"
+        "• 📖 *OpenAlex*: Repositori bibliometrik global terbuka\n"
+        "• 🔓 *Open Access*: Khusus artikel gratis dengan akses PDF langsung\n"
+        "• 📅 *Terbaru*: Khusus publikasi mutakhir (>= 2023)\n\n"
+        f"Filter aktif saat ini: *{current_flt.upper()}*",
+        reply_markup=kb,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+@router.message(F.text.in_(["💡 Brainstorm Riset", "💡 Brainstorm Ide Riset", "💡 Brainstorming", "💡 Ide Riset"]))
 async def on_menu_brainstorm(message: types.Message, state: FSMContext):
-    logger.info("🔘 User %s clicked 'Brainstorm Ide Riset'", message.chat.id)
+    logger.info("🔘 User %s clicked 'Brainstorm Riset'", message.chat.id)
     await state.set_state(BotStates.waiting_for_brainstorm_topic)
     await safe_reply(
         message,

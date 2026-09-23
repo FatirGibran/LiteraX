@@ -25,9 +25,13 @@ def test_bot_router_registration():
 def test_bot_keyboards():
     main_kb = get_main_menu_keyboard()
     assert main_kb is not None
-    assert len(main_kb.keyboard) >= 3
-    assert main_kb.keyboard[0][0].text == "🔍 Cari Paper"
-    assert main_kb.keyboard[0][1].text == "💡 Brainstorm Ide Riset"
+    assert len(main_kb.keyboard) >= 4
+    all_buttons = [btn.text for row in main_kb.keyboard for btn in row]
+    assert "🔍 Cari Paper" in all_buttons
+    assert "💡 Brainstorm Riset" in all_buttons
+    assert "🏛️ Cari Scopus" in all_buttons
+    assert "🇮🇩 Cari SINTA" in all_buttons
+    assert "🎯 Filter & Kategori" in all_buttons
 
     conf_kb = get_confirmation_keyboard("machine learning", "machin lerning")
     assert conf_kb is not None
@@ -233,4 +237,46 @@ async def test_filter_callbacks():
     await on_filter_close_callback(mock_close_cb, state=mock_state)
     assert mock_close_cb.answer.call_count == 1
     assert mock_close_cb.message.reply.call_count == 1
+
+@pytest.mark.asyncio
+async def test_menu_button_handlers():
+    from unittest.mock import AsyncMock, MagicMock
+    from literax.bot.handlers import (
+        on_menu_scopus,
+        on_menu_sinta,
+        on_menu_filter,
+        USER_SEARCH_CONTEXT
+    )
+
+    mock_state = MagicMock()
+    mock_state.set_state = AsyncMock()
+
+    # 1. Test clicking 'Cari Scopus' menu button
+    mock_msg_scopus = MagicMock()
+    mock_msg_scopus.chat.id = 99911
+    mock_msg_scopus.reply = AsyncMock(return_value=True)
+
+    await on_menu_scopus(mock_msg_scopus, state=mock_state)
+    assert USER_SEARCH_CONTEXT[99911]["filter"] == "scopus"
+    assert mock_state.set_state.call_count == 1
+    assert mock_msg_scopus.reply.call_count == 1
+    assert "SCOPUS" in mock_msg_scopus.reply.call_args[0][0]
+
+    # 2. Test clicking 'Cari SINTA' menu button
+    mock_msg_sinta = MagicMock()
+    mock_msg_sinta.chat.id = 99922
+    mock_msg_sinta.reply = AsyncMock(return_value=True)
+
+    await on_menu_sinta(mock_msg_sinta, state=mock_state)
+    assert USER_SEARCH_CONTEXT[99922]["filter"] == "sinta"
+    assert "SINTA / GARUDA" in mock_msg_sinta.reply.call_args[0][0]
+
+    # 3. Test clicking 'Filter & Kategori' menu button
+    mock_msg_flt = MagicMock()
+    mock_msg_flt.chat.id = 99933
+    mock_msg_flt.reply = AsyncMock(return_value=True)
+
+    await on_menu_filter(mock_msg_flt)
+    assert mock_msg_flt.reply.call_count == 1
+    assert "Filter Indeks & Kategori" in mock_msg_flt.reply.call_args[0][0]
 

@@ -6,14 +6,21 @@ def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
     kb = [
         [
             KeyboardButton(text="🔍 Cari Paper"),
-            KeyboardButton(text="💡 Brainstorm Ide Riset")
+            KeyboardButton(text="💡 Brainstorm Riset")
+        ],
+        [
+            KeyboardButton(text="🏛️ Cari Scopus"),
+            KeyboardButton(text="🇮🇩 Cari SINTA")
+        ],
+        [
+            KeyboardButton(text="🎯 Filter & Kategori"),
+            KeyboardButton(text="📚 Paper Tersimpan")
         ],
         [
             KeyboardButton(text="📊 Literature Matrix"),
             KeyboardButton(text="🔬 Research Gap")
         ],
         [
-            KeyboardButton(text="📚 Paper Tersimpan"),
             KeyboardButton(text="❓ Panduan & Bantuan")
         ]
     ]
