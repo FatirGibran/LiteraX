@@ -4,6 +4,9 @@ from typing import Optional
 class Settings(BaseSettings):
     # Telegram Bot
     bot_token: Optional[str] = None
+    telegram_mode: str = "polling"  # "polling" or "webhook"
+    telegram_webhook_url: Optional[str] = None
+    telegram_webhook_secret: Optional[str] = None
 
     # Database & Redis
     database_url: str = "postgresql+asyncpg://literax:literax_secret@localhost:5432/literax_db"
@@ -25,6 +28,8 @@ class Settings(BaseSettings):
     llm_base_url: Optional[str] = None
 
     # App Settings
+    app_host: str = "0.0.0.0"
+    app_port: int = 8000
     log_level: str = "INFO"
     environment: str = "development"
 
