@@ -44,7 +44,7 @@ flowchart TD
 
 1. **🧠 Fuzzy Logic Auto-Correct**: Intelligently handles typos, truncated words, and bilingual terms (Indonesian & English) using Levenshtein distance, token similarity, and weighted fuzzy logic confidence scores ($C \ge 0.90$).
 2. **🔎 Multi-Source Academic Aggregation**: Concurrently queries OpenAlex, Crossref, Semantic Scholar, Elsevier Scopus, SINTA, GARUDA, DOAJ, arXiv, and PubMed.
-3. **🎯 Targeted Index & Category Filtering**: Dedicated filtering for **Elsevier Scopus**, **SINTA / GARUDA (Indonesia)**, **OpenAlex**, Open Access availability, and publication recency through commands (`/scopus`, `/sinta`, `/filter`), inline prefixes (`scopus: <topic>`, `sinta: <topic>`, `oa: <topic>`), and interactive Telegram buttons (`🎯 Filter Indeks`).
+3. **🎯 Recommendation Priority & Targeted Index Filtering**: Customizable recommendation order (prioritize **Elsevier Scopus first**, **SINTA / GARUDA first**, or highest balanced relevance) alongside exclusive index filtering for Scopus, SINTA, Open Access, and publication recency through commands (`/priority`, `/scopus`, `/sinta`, `/filter`), inline prefixes (`scopus dulu: <topic>`, `sinta dulu: <topic>`, `scopus: <topic>`), and Telegram menu buttons (`🏛️ Rekomendasi Scopus Dulu`, `🇮🇩 Rekomendasi SINTA Dulu`, `🎯 Prioritas & Filter`).
 4. **🔁 Dynamic Query Expansion**: Expands single research intents into targeted academic permutations (e.g. synonyms, boolean queries, and concept mappings).
 5. **🧹 Intelligent Deduplication**: Merges multi-source hits using normalized DOI matching, Title Levenshtein similarity, author overlap, and publication year.
 6. **📊 AI Paper Analysis & Extraction**: Extracts structured research components from abstracts and full-text PDFs:

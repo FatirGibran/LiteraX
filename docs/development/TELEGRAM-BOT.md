@@ -8,10 +8,11 @@ LiteraX features an asynchronous Telegram bot powered by **aiogram 3.x**. It ser
 
 | Command | Arguments | Description | Example |
 | :--- | :--- | :--- | :--- |
-| `/start` | None | Initializes bot session, displays welcome instructions | `/start` |
+| `/start` | None | Initializes bot session, displays welcome instructions & refreshes menu | `/start` |
 | `/search` | `<query>` | Executes fuzzy auto-corrected multi-source search | `/search machne lerning phising` |
 | `/scopus` | `<query>` | Targeted search exclusively in Elsevier Scopus index | `/scopus zero trust network` |
 | `/sinta` | `<query>` | Targeted search in Indonesian SINTA / GARUDA accredited journals | `/sinta sistem pendukung keputusan` |
+| `/priority` / `/urutan` | None | Sets recommendation priority (Scopus first, SINTA first, best relevance) | `/priority` |
 | `/filter` | None | Opens interactive index & category selection keyboard | `/filter` |
 | `/brainstorm`| `[topic]` | AI research ideation, problem statements, and novelty | `/brainstorm federated learning` |
 | `/analyze` | `<doi>` | Generates structured AI decomposition of a paper | `/analyze 10.1016/j.cose.2024.103982` |
@@ -22,12 +23,17 @@ LiteraX features an asynchronous Telegram bot powered by **aiogram 3.x**. It ser
 | `/saved` | `[export fmt]` | Lists all saved papers (exportable as markdown/csv/bibtex) | `/saved export csv` |
 | `/clear` | None | Clears current research session | `/clear` |
 
-### 🎯 Search Filter Syntax Prefixes
-Users can filter searches directly by typing inline prefixes:
-- `scopus: <topic>` — Filter to Scopus indexed publications
-- `sinta: <topic>` or `garuda: <topic>` — Filter to SINTA / GARUDA Indonesian journals
-- `oa: <topic>` or `openaccess: <topic>` — Filter to Open Access articles with direct PDF
-- `year:YYYY <topic>` — Filter to publications from a specific year onwards (e.g. `year:2024 AI ethics`)
+### 🎯 Recommendation Priority & Search Filter Syntax Prefixes
+Users can set recommendation priorities and filter searches directly:
+- **Prioritas Rekomendasi (Recommends Specific Index First across all sources)**:
+  - `scopus dulu: <topic>` or `scopus first: <topic>` — Displays Scopus papers first, followed by others
+  - `sinta dulu: <topic>` or `sinta first: <topic>` — Displays SINTA / GARUDA papers first, followed by others
+  - `priority:scopus <topic>` or `priority:sinta <topic>` — Explicit priority prefix
+- **Filter Eksklusif (Only returns matching sources)**:
+  - `scopus: <topic>` — Filter exclusively to Scopus indexed publications
+  - `sinta: <topic>` or `garuda: <topic>` — Filter exclusively to SINTA / GARUDA Indonesian journals
+  - `oa: <topic>` or `openaccess: <topic>` — Filter to Open Access articles with direct PDF
+  - `year:YYYY <topic>` — Filter to publications from a specific year onwards (e.g. `year:2024 AI ethics`)
 
 ---
 
