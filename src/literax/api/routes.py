@@ -1,6 +1,9 @@
-from fastapi import APIRouter, Query, HTTPException
-from typing import List, Optional
+from fastapi import APIRouter, Query, HTTPException, Header
+from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
+from aiogram import Bot, Dispatcher
+from aiogram.types import Update
+from literax.config import settings
 
 from literax.models import (
     CorrectionResult,
@@ -134,4 +137,115 @@ async def export_user_collection(user_id: str, format: str = "markdown"):
 async def run_deduplication_benchmark(req: BenchmarkRequest = BenchmarkRequest()):
     """Executes automated deduplication benchmark suite."""
     return DeduplicationBenchmarkSuite.run_benchmark(req.base_count)
+
+# ==============================================================================
+# Telegram Bot Webhook & Management Endpoints
+# ==============================================================================
+
+_bot_instance: Optional[Bot] = None
+_dp_instance: Optional[Dispatcher] = None
+
+def get_telegram_instances() -> tuple[Optional[Bot], Optional[Dispatcher]]:
+    global _bot_instance, _dp_instance
+    if _bot_instance is None and settings.bot_token:
+        _bot_instance = Bot(token=settings.bot_token)
+        _dp_instance = Dispatcher()
+        from literax.bot.handlers import router as bot_router
+        _dp_instance.include_router(bot_router)
+    return _bot_instance, _dp_instance
+
+@router.get("/telegram/status", tags=["Telegram Bot"], summary="Get Telegram bot connection status")
+async def get_telegram_status():
+    """Returns the current connection status of the Telegram Bot and Webhook configuration."""
+    if not settings.bot_token:
+        return {
+            "configured": False,
+            "status": "BOT_TOKEN is not configured in .env",
+            "mode": settings.telegram_mode
+        }
+
+    bot, _ = get_telegram_instances()
+    try:
+        me = await bot.get_me()
+        webhook_info = await bot.get_webhook_info()
+        return {
+            "configured": True,
+            "bot": {
+                "id": me.id,
+                "username": me.username,
+                "first_name": me.first_name,
+                "can_join_groups": me.can_join_groups
+            },
+            "mode": settings.telegram_mode,
+            "webhook": {
+                "url": webhook_info.url,
+                "has_custom_certificate": webhook_info.has_custom_certificate,
+                "pending_update_count": webhook_info.pending_update_count,
+                "last_error_message": webhook_info.last_error_message,
+                "last_error_date": webhook_info.last_error_date
+            }
+        }
+    except Exception as e:
+        return {
+            "configured": True,
+            "status": "error_connecting_to_telegram",
+            "error": str(e)
+        }
+
+@router.post("/telegram/webhook", tags=["Telegram Bot"], summary="Receive Telegram webhook update")
+async def handle_telegram_webhook(
+    update: Dict[str, Any],
+    x_telegram_bot_api_secret_token: Optional[str] = Header(None)
+):
+    """Handles incoming webhook updates pushed from Telegram servers."""
+    if not settings.bot_token:
+        raise HTTPException(status_code=503, detail="Telegram bot is not configured on this server")
+
+    if settings.telegram_webhook_secret:
+        if x_telegram_bot_api_secret_token != settings.telegram_webhook_secret:
+            raise HTTPException(status_code=403, detail="Invalid secret token")
+
+    bot, dp = get_telegram_instances()
+    if not bot or not dp:
+        raise HTTPException(status_code=500, detail="Bot instances could not be initialized")
+
+    try:
+        telegram_update = Update.model_validate(update, context={"bot": bot})
+        await dp.feed_update(bot, telegram_update)
+        return {"ok": True}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Failed to process update: {str(e)}")
+
+@router.post("/telegram/set-webhook", tags=["Telegram Bot"], summary="Register Webhook with Telegram")
+async def set_telegram_webhook():
+    """Registers the public webhook URL with Telegram servers."""
+    if not settings.bot_token:
+        raise HTTPException(status_code=503, detail="BOT_TOKEN is not configured")
+    if not settings.telegram_webhook_url:
+        raise HTTPException(status_code=400, detail="TELEGRAM_WEBHOOK_URL is not configured in .env")
+
+    bot, _ = get_telegram_instances()
+    try:
+        success = await bot.set_webhook(
+            url=settings.telegram_webhook_url,
+            secret_token=settings.telegram_webhook_secret,
+            drop_pending_updates=False
+        )
+        return {"success": success, "webhook_url": settings.telegram_webhook_url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to set webhook: {str(e)}")
+
+@router.post("/telegram/delete-webhook", tags=["Telegram Bot"], summary="Delete Webhook (switch to polling)")
+async def delete_telegram_webhook():
+    """Removes webhook registration from Telegram (enables switching to polling)."""
+    if not settings.bot_token:
+        raise HTTPException(status_code=503, detail="BOT_TOKEN is not configured")
+
+    bot, _ = get_telegram_instances()
+    try:
+        success = await bot.delete_webhook(drop_pending_updates=False)
+        return {"success": success, "message": "Webhook removed. Polling mode can now be used."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete webhook: {str(e)}")
+
 
