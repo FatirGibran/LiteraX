@@ -53,6 +53,11 @@ class Paper(BaseModel):
         """Returns cleaned title without surrounding whitespace."""
         return self.title.strip()
 
+    @property
+    def is_highly_cited(self) -> bool:
+        """Returns True if citation_count is 100 or greater."""
+        return self.citation_count >= 100
+
 class SearchQuery(BaseModel):
     """Academic search query request payload with filter parameters."""
     raw_query: str
