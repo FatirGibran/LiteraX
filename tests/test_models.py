@@ -35,3 +35,12 @@ def test_search_query_defaults():
     assert query.limit == 10
     assert query.open_access_only is False
     assert query.expanded_queries == []
+
+def test_author_properties():
+    author1 = Author(name="  Nikola Tesla  ", affiliation="Wardenclyffe Lab")
+    assert author1.display_name == "Nikola Tesla"
+    assert author1.has_affiliation is True
+
+    author2 = Author(name="Thomas Edison", affiliation=None)
+    assert author2.display_name == "Thomas Edison"
+    assert author2.has_affiliation is False
