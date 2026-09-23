@@ -18,6 +18,10 @@ def test_paper_properties():
     assert paper_with_doi.primary_author == "Alan Turing"
     assert paper_with_doi.is_recent is True
     assert paper_with_doi.display_title == "Computing Machinery and Intelligence"
+    assert paper_with_doi.is_highly_cited is False
+
+    paper_with_doi.citation_count = 150
+    assert paper_with_doi.is_highly_cited is True
 
     paper_without_doi = Paper(
         id="p2",
