@@ -10,13 +10,24 @@ LiteraX features an asynchronous Telegram bot powered by **aiogram 3.x**. It ser
 | :--- | :--- | :--- | :--- |
 | `/start` | None | Initializes bot session, displays welcome instructions | `/start` |
 | `/search` | `<query>` | Executes fuzzy auto-corrected multi-source search | `/search machne lerning phising` |
+| `/scopus` | `<query>` | Targeted search exclusively in Elsevier Scopus index | `/scopus zero trust network` |
+| `/sinta` | `<query>` | Targeted search in Indonesian SINTA / GARUDA accredited journals | `/sinta sistem pendukung keputusan` |
+| `/filter` | None | Opens interactive index & category selection keyboard | `/filter` |
+| `/brainstorm`| `[topic]` | AI research ideation, problem statements, and novelty | `/brainstorm federated learning` |
 | `/analyze` | `<doi>` | Generates structured AI decomposition of a paper | `/analyze 10.1016/j.cose.2024.103982` |
 | `/matrix` | `[topic]` | Compiles a comparative literature review matrix | `/matrix phishing detection` |
-| `/gap` | `[topic]` | Synthesizes potential research gaps from saved papers | `/gap phishing detection` |
+| `/gap` | `[topic]` | Synthesizes potential research gaps from literature | `/gap phishing detection` |
 | `/cite` | `<doi>` | Generates citations in APA, IEEE, Harvard, BibTeX | `/cite 10.1016/j.cose.2024.103982` |
 | `/save` | `<doi>` | Saves paper to user's active research session | `/save 10.1016/j.cose.2024.103982` |
-| `/saved` | None | Lists all saved papers in the current session | `/saved` |
+| `/saved` | `[export fmt]` | Lists all saved papers (exportable as markdown/csv/bibtex) | `/saved export csv` |
 | `/clear` | None | Clears current research session | `/clear` |
+
+### 🎯 Search Filter Syntax Prefixes
+Users can filter searches directly by typing inline prefixes:
+- `scopus: <topic>` — Filter to Scopus indexed publications
+- `sinta: <topic>` or `garuda: <topic>` — Filter to SINTA / GARUDA Indonesian journals
+- `oa: <topic>` or `openaccess: <topic>` — Filter to Open Access articles with direct PDF
+- `year:YYYY <topic>` — Filter to publications from a specific year onwards (e.g. `year:2024 AI ethics`)
 
 ---
 

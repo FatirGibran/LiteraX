@@ -44,16 +44,17 @@ flowchart TD
 
 1. **🧠 Fuzzy Logic Auto-Correct**: Intelligently handles typos, truncated words, and bilingual terms (Indonesian & English) using Levenshtein distance, token similarity, and weighted fuzzy logic confidence scores ($C \ge 0.90$).
 2. **🔎 Multi-Source Academic Aggregation**: Concurrently queries OpenAlex, Crossref, Semantic Scholar, Elsevier Scopus, SINTA, GARUDA, DOAJ, arXiv, and PubMed.
-3. **🔁 Dynamic Query Expansion**: Expands single research intents into targeted academic permutations (e.g. synonyms, boolean queries, and concept mappings).
-4. **🧹 Intelligent Deduplication**: Merges multi-source hits using normalized DOI matching, Title Levenshtein similarity, author overlap, and publication year.
-5. **📊 AI Paper Analysis & Extraction**: Extracts structured research components from abstracts and full-text PDFs:
+3. **🎯 Targeted Index & Category Filtering**: Dedicated filtering for **Elsevier Scopus**, **SINTA / GARUDA (Indonesia)**, **OpenAlex**, Open Access availability, and publication recency through commands (`/scopus`, `/sinta`, `/filter`), inline prefixes (`scopus: <topic>`, `sinta: <topic>`, `oa: <topic>`), and interactive Telegram buttons (`🎯 Filter Indeks`).
+4. **🔁 Dynamic Query Expansion**: Expands single research intents into targeted academic permutations (e.g. synonyms, boolean queries, and concept mappings).
+5. **🧹 Intelligent Deduplication**: Merges multi-source hits using normalized DOI matching, Title Levenshtein similarity, author overlap, and publication year.
+6. **📊 AI Paper Analysis & Extraction**: Extracts structured research components from abstracts and full-text PDFs:
    - Research Problem & Objectives
    - Methodology & Algorithms
    - Datasets & Evaluation Metrics
    - Key Findings & Empirical Results
    - Limitations & Suggested Future Work
-6. **🔬 Research Gap & Literature Matrix**: Compares methodologies across multiple papers in a tabular matrix to highlight unexplored datasets, algorithmic combinations, and trade-offs.
-7. **📖 Citation Generation**: Generates standard bibliographic citations in APA 7th, IEEE, Harvard, Vancouver, BibTeX, and RIS formats.
+7. **🔬 Research Gap & Literature Matrix**: Compares methodologies across multiple papers in a tabular matrix to highlight unexplored datasets, algorithmic combinations, and trade-offs.
+8. **📖 Citation Generation**: Generates standard bibliographic citations in APA 7th, IEEE, Harvard, Vancouver, BibTeX, and RIS formats.
 
 ---
 
@@ -61,25 +62,27 @@ flowchart TD
 
 ```text
 User:
-/search machne lerning untk deteksi phising
+/scopus deep learning for zero day detection
 
 LiteraX:
-🔎 Did you mean: "machine learning untuk deteksi phishing"?
-Confidence: 96%
-⚡ Searching OpenAlex, Scopus, Semantic Scholar, and Crossref...
+⚡ Mencari di 🏛️ Scopus (International Indexed)...
 
-📚 SEARCH RESULTS (Found 42 papers)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-1. Machine Learning-Based Phishing URL Detection: A Survey
-   Year: 2025 | Source: Scopus | Relevance: 96%
-   Authors: A. Rahman, S. Kumar
-   DOI: 10.1016/j.cose.2024.103982
+📚 HASIL PENCARIAN (1/5) | 🎯 `Scopus`
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📄 Deep Learning Approaches for Zero-Day Malware Detection: An Empirical Evaluation
+👤 Penulis: A. Rahman, S. Kumar, M. Tanaka
+📅 Tahun: 2024 | 🏛️ Sumber: Scopus
+⭐ Relevansi: 94% | 📊 Sitasi: 48
 
-   Abstract:
-   Phishing attacks represent a pervasive threat... This study compares
-   Random Forest, XGBoost, and Transformer models on 150k URLs...
+💡 Reasoning Relevansi:
+Sangat cocok secara semantik dan terminologi; publikasi mutakhir (2024); terindeks di jurnal/prosiding internasional bereputasi.
 
-   [🔗 DOI] [📄 PDF] [📖 Citation] [🔬 Analyze Paper]
+🌐 Direct Access: [DOI Resolver](https://doi.org/10.1016/j.cose.2024.103982) • [Direct PDF](https://example.com/pdf)
+
+[🔗 Buka Artikel] [📥 Direct PDF]
+[🔬 Analisis] [📖 Sitasi] [💡 Brainstorm] [💾 Simpan]
+[Next ➡️]
+[🎯 Filter Indeks: 🏛️ Scopus]
 ```
 
 ---
