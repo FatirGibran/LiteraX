@@ -1,7 +1,12 @@
 import pytest
 from aiogram import Router
 from literax.bot.handlers import router, USER_SESSIONS, WELCOME_MESSAGE_TEXT
-from literax.bot.keyboards import get_confirmation_keyboard, get_paper_keyboard, get_export_format_keyboard
+from literax.bot.keyboards import (
+    get_confirmation_keyboard,
+    get_paper_keyboard,
+    get_export_format_keyboard,
+    get_main_menu_keyboard
+)
 from literax.models import Paper, Author
 from literax.storage.collection import default_collection_manager
 
@@ -18,6 +23,11 @@ def test_bot_router_registration():
     assert len(router.callback_query.handlers) >= 5
 
 def test_bot_keyboards():
+    main_kb = get_main_menu_keyboard()
+    assert main_kb is not None
+    assert len(main_kb.keyboard) >= 3
+    assert main_kb.keyboard[0][0].text == "🔍 Cari Paper"
+
     conf_kb = get_confirmation_keyboard("machine learning", "machin lerning")
     assert conf_kb is not None
     assert len(conf_kb.inline_keyboard) > 0
