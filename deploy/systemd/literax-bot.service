@@ -1,0 +1,19 @@
+[Unit]
+Description=LiteraX Telegram Bot Worker Service
+After=network.target literax-api.service
+
+[Service]
+Type=simple
+User=fatir
+WorkingDirectory=/home/fatir/LiteraX
+ExecStart=/home/fatir/LiteraX/.venv/bin/python -m literax.bot.main
+Restart=always
+RestartSec=10
+EnvironmentFile=/home/fatir/LiteraX/.env
+
+# Standard output and error logging to systemd journal
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
