@@ -5,6 +5,13 @@ from literax.models import Paper
 class CitationGenerator:
     """Generates citations across academic styles and reference formats."""
 
+    SUPPORTED_STYLES = ["apa", "ieee", "harvard", "mla", "bibtex", "ris"]
+
+    @classmethod
+    def is_style_supported(cls, style: str) -> bool:
+        """Returns True if the given citation style is supported."""
+        return style.lower().strip() in cls.SUPPORTED_STYLES
+
     @classmethod
     def format_authors_apa(cls, paper: Paper) -> str:
         if not paper.authors:
