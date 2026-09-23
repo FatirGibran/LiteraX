@@ -27,14 +27,25 @@ def test_bot_keyboards():
     assert main_kb is not None
     assert len(main_kb.keyboard) >= 3
     assert main_kb.keyboard[0][0].text == "🔍 Cari Paper"
+    assert main_kb.keyboard[0][1].text == "💡 Brainstorm Ide Riset"
 
     conf_kb = get_confirmation_keyboard("machine learning", "machin lerning")
     assert conf_kb is not None
     assert len(conf_kb.inline_keyboard) > 0
 
-    paper_kb = get_paper_keyboard("10.1016/j.cose.2024.103982", 0, 5)
+    paper_kb = get_paper_keyboard(
+        doi="10.1016/j.cose.2024.103982",
+        current_idx=0,
+        total_count=5,
+        direct_url="https://doi.org/10.1016/j.cose.2024.103982",
+        pdf_url="https://example.com/paper.pdf"
+    )
     assert paper_kb is not None
-    assert len(paper_kb.inline_keyboard) > 0
+    assert len(paper_kb.inline_keyboard) >= 2
+    # Verify direct url button exists
+    assert any(btn.url == "https://doi.org/10.1016/j.cose.2024.103982" for row in paper_kb.inline_keyboard for btn in row)
+    # Verify brainstorm action callback exists
+    assert any("act_brain:" in (btn.callback_data or "") for row in paper_kb.inline_keyboard for btn in row)
 
     export_kb = get_export_format_keyboard()
     assert export_kb is not None

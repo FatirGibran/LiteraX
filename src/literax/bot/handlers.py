@@ -12,6 +12,7 @@ from literax.synthesis.citation import CitationGenerator
 from literax.synthesis.analyzer import PaperAnalyzer
 from literax.synthesis.matrix import LiteratureMatrixBuilder
 from literax.synthesis.gap_finder import ResearchGapFinder
+from literax.synthesis.brainstormer import ResearchBrainstormer
 from literax.storage.collection import default_collection_manager
 from literax.bot.keyboards import (
     get_confirmation_keyboard,
@@ -32,15 +33,17 @@ class BotStates(StatesGroup):
     waiting_for_search_query = State()
     waiting_for_matrix_topic = State()
     waiting_for_gap_topic = State()
+    waiting_for_brainstorm_topic = State()
 
 WELCOME_MESSAGE_TEXT = (
     "🔬 *Welcome to LiteraX — AI Academic Assistant*\n\n"
     "Selamat datang! Saya dapat menemukan, menganalisis, dan membuat sitasi ilmiah dari "
     "SINTA, Scopus, OpenAlex, Semantic Scholar, dan Crossref.\n\n"
     "⚡ *Menu Input & Perintah:*\n"
-    "• `🔍 Cari Paper` atau `/search` / `/cari <topik>` — Pencarian multi-sumber dengan auto-koreksi typo\n"
-    "• `📊 Literature Matrix` atau `/matrix <topik>` — Sintesis matriks komparasi literatur\n"
-    "• `🔬 Research Gap` atau `/gap <topik>` — Identifikasi celah riset dan peluang baru\n"
+    "• `🔍 Cari Paper` atau `/search` / `/cari <topik>` — Pencarian multi-sumber dengan auto-koreksi typo & direct links\n"
+    "• `💡 Brainstorm Riset` atau `/brainstorm <topik>` — Rumusan masalah, ide judul inovatif, dataset, dan kebaruan (novelty)\n"
+    "• `📊 Literature Matrix` atau `/matrix <topik>` — Sintesis matriks komparasi metodologi\n"
+    "• `🔬 Research Gap` atau `/gap <topik>` — Identifikasi celah riset dan peluang novelty baru\n"
     "• `📖 Sitasi` atau `/cite <doi>` — Format sitasi instan (APA 7th, BibTeX)\n"
     "• `📚 Paper Tersimpan` atau `/saved` — Akses dan ekspor koleksi riset Anda\n\n"
     "💡 *Tips Cepat:* Anda juga bisa langsung memilih tombol menu di bawah atau mengetik pertanyaan topik apa saja di chat!"
@@ -87,6 +90,20 @@ async def on_menu_search(message: types.Message, state: FSMContext):
         "🔍 *Pencarian Paper Ilmiah*\n\n"
         "Silakan ketik kata kunci, judul, atau topik riset yang ingin dicari:\n\n"
         "_Contoh:_ `pengaruh media sosial terhadap partisipasi pemilu`",
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+@router.message(F.text.in_(["💡 Brainstorm Ide Riset", "💡 Brainstorming", "💡 Ide Riset"]))
+async def on_menu_brainstorm(message: types.Message, state: FSMContext):
+    logger.info("🔘 User %s clicked 'Brainstorm Ide Riset'", message.chat.id)
+    await state.set_state(BotStates.waiting_for_brainstorm_topic)
+    await safe_reply(
+        message,
+        "💡 *AI Research Brainstorming & Ideation*\n\n"
+        "Silakan ketik topik atau ide umum yang ingin Anda kembangkan menjadi judul riset berbobot:\n\n"
+        "_Contoh:_ `deteksi hoaks machine learning` atau `federated learning privasi IoT`\n\n"
+        "AI akan menyusun rumusan masalah, 3 rekomendasi judul paper/skripsi, metodologi mutakhir, dataset benchmark, dan reasoning potensi novelty!",
         reply_markup=get_main_menu_keyboard(),
         parse_mode=ParseMode.MARKDOWN
     )
@@ -144,6 +161,13 @@ async def on_state_search_query(message: types.Message, state: FSMContext):
     query = (message.text or "").strip()
     if query:
         await process_search_query(message, query)
+
+@router.message(BotStates.waiting_for_brainstorm_topic)
+async def on_state_brainstorm_topic(message: types.Message, state: FSMContext):
+    await state.clear()
+    topic = (message.text or "").strip()
+    if topic:
+        await execute_brainstorm(message, topic)
 
 @router.message(BotStates.waiting_for_matrix_topic)
 async def on_state_matrix_topic(message: types.Message, state: FSMContext):
@@ -250,8 +274,18 @@ async def execute_search(message: types.Message, search_term: str, correction=No
 
 async def send_paper_result(message: types.Message, papers: list[Paper], index: int, edit_message: types.Message | None = None):
     paper = papers[index]
-    authors_str = ", ".join([a.name for a in paper.authors[:2]]) if paper.authors else "Unknown"
-    abstract_preview = (paper.abstract[:280] + "...") if paper.abstract else "Abstrak belum tersedia di ringkasan publik."
+    authors_str = ", ".join([a.name for a in paper.authors[:3]]) if paper.authors else "Unknown"
+    abstract_preview = (paper.abstract[:240] + "...") if paper.abstract else "Abstrak belum tersedia di ringkasan publik."
+
+    # Direct links
+    links = []
+    if paper.doi_url:
+        links.append(f"[DOI Resolver]({paper.doi_url})")
+    if paper.full_text_url:
+        links.append(f"[Direct PDF]({paper.full_text_url})")
+    if paper.landing_page_url:
+        links.append(f"[Web Portal]({paper.landing_page_url})")
+    link_display = " • ".join(links) if links else "`Link publik belum terindeks`"
 
     text = (
         f"📚 *HASIL PENCARIAN ({index + 1}/{len(papers)})*\n"
@@ -259,23 +293,34 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         f"📄 *{paper.title}*\n"
         f"👤 *Penulis:* {authors_str}\n"
         f"📅 *Tahun:* {paper.year or 'N/A'} | 🏛️ *Sumber:* {paper.source}\n"
-        f"⭐ *Relevansi:* {int(paper.composite_relevance * 100)}% | 🔗 *DOI:* `{paper.doi or 'N/A'}`\n\n"
+        f"⭐ *Relevansi:* {int(paper.composite_relevance * 100)}% | 📊 *Sitasi:* {paper.citation_count}\n\n"
+        f"💡 *Reasoning Relevansi:*\n_{paper.relevance_reasoning}_\n\n"
+        f"🌐 *Direct Access:* {link_display}\n\n"
         f"📝 *Abstrak:*\n_{abstract_preview}_\n"
     )
 
-    kb = get_paper_keyboard(paper.doi or paper.id, index, len(papers))
+    kb = get_paper_keyboard(
+        doi=paper.doi or paper.id,
+        current_idx=index,
+        total_count=len(papers),
+        direct_url=paper.direct_url,
+        pdf_url=paper.full_text_url
+    )
     if edit_message:
         try:
-            await edit_message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
+            await edit_message.edit_text(text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
         except Exception:
             # Fallback without markdown if title/abstract has entity conflicts
+            plain_link = paper.direct_url or "Belum tersedia"
             fallback_text = (
                 f"📚 HASIL PENCARIAN ({index + 1}/{len(papers)})\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📄 {paper.title}\n"
                 f"👤 Penulis: {authors_str}\n"
                 f"📅 Tahun: {paper.year or 'N/A'} | 🏛️ Sumber: {paper.source}\n"
-                f"⭐ Relevansi: {int(paper.composite_relevance * 100)}% | 🔗 DOI: {paper.doi or 'N/A'}\n\n"
+                f"⭐ Relevansi: {int(paper.composite_relevance * 100)}% | 📊 Sitasi: {paper.citation_count}\n\n"
+                f"💡 Reasoning Relevansi:\n{paper.relevance_reasoning}\n\n"
+                f"🌐 Link Artikel: {plain_link}\n\n"
                 f"📝 Abstrak:\n{abstract_preview}\n"
             )
             await edit_message.edit_text(fallback_text, reply_markup=kb, parse_mode=None)
@@ -283,8 +328,50 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         await safe_reply(message, text, reply_markup=kb, parse_mode=ParseMode.MARKDOWN)
 
 # ------------------------------------------------------------------------------
-# 5. Matrix & Gap Analysis
+# 5. Matrix, Gap Analysis, & Brainstorming
 # ------------------------------------------------------------------------------
+
+@router.message(Command("brainstorm", "ide", "brainstorming"))
+async def cmd_brainstorm(message: types.Message, state: FSMContext | None = None):
+    if state:
+        await state.clear()
+    text = message.text or ""
+    parts = text.split(maxsplit=1)
+    topic = parts[1].strip() if len(parts) > 1 else ""
+    if not topic:
+        if state:
+            await state.set_state(BotStates.waiting_for_brainstorm_topic)
+        await safe_reply(
+            message,
+            "⚠️ Silakan masukkan topik atau ide riset yang ingin di-brainstorming.\n_Contoh:_ `/brainstorm cyber security zero trust`",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+    await execute_brainstorm(message, topic)
+
+async def execute_brainstorm(message: types.Message, topic: str, seed_papers: list[Paper] | None = None):
+    status_msg = await safe_reply(message, f"💡 Melakukan AI brainstorming untuk topik *{topic}*...", parse_mode=ParseMode.MARKDOWN)
+
+    # Search relevant papers if none provided
+    papers = seed_papers
+    if not papers:
+        query_obj = SearchQuery(raw_query=topic, limit=3)
+        try:
+            papers = await aggregator.search(query_obj)
+        except Exception:
+            papers = []
+
+    result = ResearchBrainstormer.generate(topic, seed_papers=papers)
+    md_text = ResearchBrainstormer.to_markdown(result)
+
+    if len(md_text) > 4000:
+        md_text = md_text[:3950] + "\n\n*(Dipotong karena batas karakter Telegram)*"
+
+    try:
+        await status_msg.edit_text(md_text, parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
+    except Exception:
+        await status_msg.edit_text(md_text, parse_mode=None)
 
 @router.message(Command("matrix", "matriks"))
 async def cmd_matrix(message: types.Message, state: FSMContext | None = None):
@@ -335,7 +422,7 @@ async def cmd_gap(message: types.Message, state: FSMContext | None = None):
     await execute_gap(message, topic)
 
 async def execute_gap(message: types.Message, topic: str):
-    status_msg = await safe_reply(message, f"🔍 Menganalisis research gap untuk *{topic}*...", parse_mode=ParseMode.MARKDOWN)
+    status_msg = await safe_reply(message, f"🔍 Menganalisis research gap & peluang novelty untuk *{topic}*...", parse_mode=ParseMode.MARKDOWN)
     query_obj = SearchQuery(raw_query=topic, limit=5)
     papers = await aggregator.search(query_obj)
 
@@ -344,9 +431,18 @@ async def execute_gap(message: types.Message, topic: str):
         return
 
     report = ResearchGapFinder.find_gaps(topic, papers)
-    lines = [f"🔬 *Analisis Research Gap: {report.topic}*\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━"]
+    lines = [
+        f"🔬 *ANALISIS RESEARCH GAP & PELUANG NOVELTY*\n"
+        f"🎯 *Topik:* `{report.topic}`\n"
+        f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    ]
     for idx, gap in enumerate(report.gaps, 1):
-        lines.append(f"📌 *{idx}. [{gap.category}] {gap.title}*\n{gap.description}\n")
+        lines.append(f"📌 *{idx}. [{gap.category}] {gap.title}* (Urgensi: `{gap.severity}`)")
+        lines.append(f"{gap.description}")
+        if gap.novelty_opportunity:
+            lines.append(f"💡 _{gap.novelty_opportunity}_\n")
+        else:
+            lines.append("")
 
     text = "\n".join(lines)
     if len(text) > 4000:
@@ -504,17 +600,32 @@ async def on_analyze(callback: types.CallbackQuery):
     target = next((p for p in papers if p.doi == doi or p.id == doi), papers[0] if papers else None)
     if target:
         analysis = PaperAnalyzer.heuristic_extract(target)
+        direct_link = target.direct_url or "Link publik belum terindeks"
         text = (
-            f"🔬 *Analisis Paper:* {analysis.title}\n"
+            f"🔬 *Analisis Mendalam Paper:*\n*{analysis.title}*\n"
             f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
             f"🎯 *Tujuan Riset:* {analysis.research_objective}\n"
             f"🛠️ *Metodologi:* {', '.join(analysis.algorithms_used)}\n"
             f"📊 *Dataset:* {analysis.dataset}\n"
             f"📈 *Temuan Utama:* {analysis.key_findings}\n"
-            f"⚠️ *Limitasi:* {analysis.limitations}"
+            f"⚠️ *Limitasi:* {analysis.limitations}\n\n"
+            f"🧠 *Scientific Reasoning:*\n_{analysis.reasoning or 'Model terbukti efektif pada domain yang dievaluasi.'}_\n\n"
+            f"🌐 *Direct Link:* {direct_link}"
         )
         await safe_reply(callback.message, text, parse_mode=ParseMode.MARKDOWN)
     await callback.answer("Analisis selesai!")
+
+@router.callback_query(F.data.startswith("act_brain:"))
+async def on_brainstorm_callback(callback: types.CallbackQuery):
+    doi = callback.data.split(":")[1]
+    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    target = next((p for p in papers if p.doi == doi or p.id == doi), papers[0] if papers else None)
+    if target:
+        await callback.answer("Menyiapkan ide riset...")
+        topic = target.title
+        await execute_brainstorm(callback.message, topic, seed_papers=[target])
+    else:
+        await callback.answer("Paper tidak ditemukan di sesi ini.", show_alert=True)
 
 @router.callback_query(F.data.startswith("act_save:"))
 async def on_save_callback(callback: types.CallbackQuery):
