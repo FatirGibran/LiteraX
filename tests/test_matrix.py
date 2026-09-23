@@ -30,3 +30,11 @@ def test_literature_matrix_build_and_exports():
     parsed = json.loads(json_data)
     assert parsed["topic"] == "Attention Models"
     assert len(parsed["rows"]) == 1
+
+def test_literature_matrix_supported_formats():
+    assert LiteratureMatrixBuilder.is_format_supported("markdown") is True
+    assert LiteratureMatrixBuilder.is_format_supported("CSV") is True
+    assert LiteratureMatrixBuilder.is_format_supported("bibtex") is True
+    assert LiteratureMatrixBuilder.is_format_supported("JSON") is True
+    assert LiteratureMatrixBuilder.is_format_supported("pdf") is False
+    assert len(LiteratureMatrixBuilder.SUPPORTED_EXPORT_FORMATS) == 4
