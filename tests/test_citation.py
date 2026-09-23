@@ -37,3 +37,10 @@ def test_citation_generation_mla():
     assert "Doe, J." in mla
     assert '"Modern Machine Learning Paradigm."' in mla
     assert "2024" in mla
+
+def test_citation_supported_styles():
+    assert CitationGenerator.is_style_supported("apa") is True
+    assert CitationGenerator.is_style_supported("IEEE") is True
+    assert CitationGenerator.is_style_supported("bibtex") is True
+    assert CitationGenerator.is_style_supported("unknown_style") is False
+    assert len(CitationGenerator.SUPPORTED_STYLES) >= 6
