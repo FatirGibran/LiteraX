@@ -52,6 +52,33 @@ class PaperAggregator:
         # Deduplicate
         unique_papers = Deduplicator.deduplicate(raw_papers)
 
+        # Post-filter by specific provider / index
+        if query.providers:
+            prov_filter = [p.lower() for p in query.providers]
+            unique_papers = [
+                p for p in unique_papers
+                if any(name in p.source.lower() or p.source.lower() in name for name in prov_filter)
+            ]
+
+        # Post-filter by Open Access
+        if query.open_access_only:
+            unique_papers = [
+                p for p in unique_papers
+                if p.open_access or bool(p.full_text_url)
+            ]
+
+        # Post-filter by Publication Year Range
+        if query.year_start:
+            unique_papers = [
+                p for p in unique_papers
+                if p.year is None or p.year >= query.year_start
+            ]
+        if query.year_end:
+            unique_papers = [
+                p for p in unique_papers
+                if p.year is None or p.year <= query.year_end
+            ]
+
         # Rank
         ranked_papers = RelevanceRanker.rank(query.raw_query, unique_papers)
 
