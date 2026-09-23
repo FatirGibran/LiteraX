@@ -107,4 +107,15 @@ def test_api_openapi_metadata():
     assert search_op["summary"] == "Search and aggregate literature"
     assert "/api/v1/correct" in paths
     assert "Fuzzy Search" in paths["/api/v1/correct"]["post"]["tags"]
+    assert "/api/v1/brainstorm" in paths
+    assert "Brainstorming" in paths["/api/v1/brainstorm"]["post"]["tags"]
+
+def test_api_brainstorm_endpoint():
+    response = client.post("/api/v1/brainstorm", json={"topic": "Quantum Machine Learning", "papers": []})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["topic"] == "Quantum Machine Learning"
+    assert len(data["ideas"]) == 3
+    assert "core_problem" in data
+    assert len(data["benchmark_datasets"]) >= 2
 

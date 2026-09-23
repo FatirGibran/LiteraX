@@ -12,6 +12,7 @@ from literax.models import (
     PaperAnalysis,
     LiteratureMatrix,
     ResearchGapReport,
+    BrainstormResult,
     CitationResponse
 )
 from literax.engine.benchmark import DeduplicationBenchmarkSuite, DedupBenchmarkResult
@@ -22,6 +23,7 @@ from literax.synthesis.citation import CitationGenerator
 from literax.synthesis.analyzer import PaperAnalyzer
 from literax.synthesis.matrix import LiteratureMatrixBuilder
 from literax.synthesis.gap_finder import ResearchGapFinder
+from literax.synthesis.brainstormer import ResearchBrainstormer
 
 router = APIRouter(prefix="/api/v1")
 fuzzy_engine = FuzzyAutoCorrect()
@@ -44,6 +46,10 @@ class MatrixExportRequest(BaseModel):
 class GapRequest(BaseModel):
     topic: str
     papers: List[Paper]
+
+class BrainstormRequest(BaseModel):
+    topic: str
+    papers: List[Paper] = []
 
 @router.post("/correct", response_model=CorrectionResult, tags=["Fuzzy Search"], summary="Correct search query")
 async def correct_query(req: CorrectRequest):
@@ -81,6 +87,11 @@ async def export_matrix(req: MatrixExportRequest):
 async def find_research_gaps(req: GapRequest):
     """Identifies potential research gaps across a cluster of papers."""
     return ResearchGapFinder.find_gaps(req.topic, req.papers)
+
+@router.post("/brainstorm", response_model=BrainstormResult, tags=["Brainstorming"], summary="AI Research Brainstorming & Ideation")
+async def brainstorm_topic(req: BrainstormRequest):
+    """Synthesizes academic problems, generates high-impact thesis/paper topics, and highlights novelty."""
+    return ResearchBrainstormer.generate(req.topic, seed_papers=req.papers)
 
 @router.get("/papers/{id}/citation", response_model=CitationResponse, tags=["Citations"], summary="Format academic citation")
 async def get_citation(
