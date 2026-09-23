@@ -58,6 +58,52 @@ class Paper(BaseModel):
         """Returns True if citation_count is 100 or greater."""
         return self.citation_count >= 100
 
+    @property
+    def direct_url(self) -> Optional[str]:
+        """Returns the most direct URL to access the paper (full text PDF, DOI, or landing page)."""
+        if self.full_text_url and self.full_text_url.strip():
+            return self.full_text_url.strip()
+        if self.doi and self.doi.strip():
+            clean_doi = self.doi.strip().replace("https://doi.org/", "").replace("http://dx.doi.org/", "")
+            return f"https://doi.org/{clean_doi}"
+        if self.landing_page_url and self.landing_page_url.strip():
+            return self.landing_page_url.strip()
+        return None
+
+    @property
+    def doi_url(self) -> Optional[str]:
+        """Returns normalized https://doi.org/... link if DOI is present."""
+        if not self.doi or not self.doi.strip():
+            return None
+        clean_doi = self.doi.strip().replace("https://doi.org/", "").replace("http://dx.doi.org/", "")
+        return f"https://doi.org/{clean_doi}"
+
+    @property
+    def relevance_reasoning(self) -> str:
+        """Generates clear scientific reasoning explaining why this paper is recommended."""
+        reasons = []
+        if self.composite_relevance >= 0.85:
+            reasons.append("Sangat cocok secara semantik dan terminologi dengan topik yang dicari")
+        elif self.composite_relevance >= 0.65:
+            reasons.append("Memiliki kecocokan konseptual dan kata kunci yang kuat")
+        else:
+            reasons.append("Terkait dengan konteks penelitian yang relevan")
+
+        if self.is_highly_cited:
+            reasons.append(f"artikel rujukan utama (high-impact) dengan {self.citation_count} sitasi")
+        elif self.citation_count > 10:
+            reasons.append(f"sudah dirujuk oleh {self.citation_count} publikasi lain")
+
+        if self.is_recent:
+            reasons.append(f"publikasi mutakhir ({self.year}) yang menyajikan State-of-the-Art (SOTA)")
+        elif self.year:
+            reasons.append(f"terbit pada tahun {self.year}")
+
+        if "scopus" in self.source.lower() or "sinta 1" in self.source.lower():
+            reasons.append("terindeks di jurnal/prosiding internasional bereputasi")
+
+        return "; ".join(reasons) + "."
+
 class SearchQuery(BaseModel):
     """Academic search query request payload with filter parameters."""
     raw_query: str
@@ -98,6 +144,7 @@ class PaperAnalysis(BaseModel):
     key_findings: str
     limitations: str
     future_work: Optional[str] = None
+    reasoning: Optional[str] = None
 
 class LiteratureMatrixRow(BaseModel):
     """Row representing comparative literature synthesis for a single paper."""
@@ -127,6 +174,7 @@ class ResearchGapItem(BaseModel):
     category: str  # Methodology, Dataset, Scalability, Evaluation
     severity: str = "Medium"  # High, Medium, Low
     supporting_papers: List[str] = Field(default_factory=list)
+    novelty_opportunity: Optional[str] = None
 
 class ResearchGapReport(BaseModel):
     """Comprehensive synthesis report highlighting identified research gaps."""
@@ -137,6 +185,30 @@ class ResearchGapReport(BaseModel):
     def total_gaps(self) -> int:
         """Returns the total number of identified research gaps."""
         return len(self.gaps)
+
+class BrainstormIdea(BaseModel):
+    """Specific formulated research proposal or thesis idea."""
+    title_id: str
+    title_en: str
+    focus: str
+    suggested_methods: List[str] = Field(default_factory=list)
+    suggested_datasets: List[str] = Field(default_factory=list)
+    novelty_points: str
+    expected_contribution: str
+
+class BrainstormResult(BaseModel):
+    """Comprehensive research brainstorming output."""
+    topic: str
+    core_problem: str
+    ideas: List[BrainstormIdea] = Field(default_factory=list)
+    methodology_landscape: str
+    benchmark_datasets: List[str] = Field(default_factory=list)
+    practical_challenges: List[str] = Field(default_factory=list)
+    seed_papers: List[Paper] = Field(default_factory=list)
+
+    @property
+    def total_ideas(self) -> int:
+        return len(self.ideas)
 
 class CitationResponse(BaseModel):
     """Formatted academic citation response across various reference styles."""

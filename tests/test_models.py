@@ -22,6 +22,9 @@ def test_paper_properties():
 
     paper_with_doi.citation_count = 150
     assert paper_with_doi.is_highly_cited is True
+    assert paper_with_doi.doi_url == "https://doi.org/10.1093/mind/LIX.236.433"
+    assert paper_with_doi.direct_url == "https://doi.org/10.1093/mind/LIX.236.433"
+    assert "artikel rujukan utama" in paper_with_doi.relevance_reasoning
 
     paper_without_doi = Paper(
         id="p2",
