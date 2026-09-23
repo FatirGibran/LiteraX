@@ -1,5 +1,27 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from aiogram.types import InlineKeyboardMarkup
+from aiogram.types import InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
+
+def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
+    """Returns persistent reply keyboard menu shown at the bottom of the chat."""
+    kb = [
+        [
+            KeyboardButton(text="🔍 Cari Paper"),
+            KeyboardButton(text="📚 Paper Tersimpan")
+        ],
+        [
+            KeyboardButton(text="📊 Literature Matrix"),
+            KeyboardButton(text="🔬 Research Gap")
+        ],
+        [
+            KeyboardButton(text="❓ Panduan & Bantuan")
+        ]
+    ]
+    return ReplyKeyboardMarkup(
+        keyboard=kb,
+        resize_keyboard=True,
+        is_persistent=True,
+        input_field_placeholder="Pilih menu atau ketik topik riset..."
+    )
 
 def get_confirmation_keyboard(corrected_query: str, raw_query: str) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
@@ -18,7 +40,6 @@ def get_paper_keyboard(doi: str | None, current_idx: int, total_count: int) -> I
     builder.button(text="💾 Save", callback_data=f"act_save:{clean_doi}")
 
     # Navigation buttons
-    nav_buttons = []
     if current_idx > 0:
         builder.button(text="⬅️ Prev", callback_data=f"nav_page:{current_idx-1}")
     if current_idx < total_count - 1:
