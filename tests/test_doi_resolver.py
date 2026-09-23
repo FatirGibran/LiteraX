@@ -9,6 +9,13 @@ def test_doi_normalization():
     assert resolver.normalize_doi("doi: 10.1000/182") == "10.1000/182"
     assert resolver.normalize_doi("10.1000/182") == "10.1000/182"
 
+def test_doi_resolver_supported_styles():
+    resolver = DoiResolver()
+    assert len(resolver.supported_styles) >= 7
+    assert "apa" in resolver.supported_styles
+    assert "bibtex" in resolver.supported_styles
+    assert "ris" in resolver.supported_styles
+
 def test_cache_hits_and_misses():
     resolver = DoiResolver(ttl_seconds=60)
     doi = "10.1145/12345"
