@@ -87,3 +87,150 @@ async def test_safe_reply_helper():
     res = await safe_reply(mock_msg, "*Test message*")
     assert res is True
     assert mock_msg.reply.call_count == 1
+
+def test_filter_keyboards():
+    from literax.bot.keyboards import get_filter_selection_keyboard
+
+    # Test default filter keyboard
+    flt_kb = get_filter_selection_keyboard(active_filter="all")
+    assert flt_kb is not None
+    button_callbacks = [btn.callback_data for row in flt_kb.inline_keyboard for btn in row if btn.callback_data]
+    assert "flt_set:all" in button_callbacks
+    assert "flt_set:scopus" in button_callbacks
+    assert "flt_set:sinta" in button_callbacks
+    assert "flt_set:openalex" in button_callbacks
+    assert "flt_set:oa" in button_callbacks
+    assert "flt_set:recent" in button_callbacks
+    assert "flt_close:search" in button_callbacks
+
+    # Test scopus active indicator
+    scopus_kb = get_filter_selection_keyboard(active_filter="scopus")
+    scopus_btn = next(btn for row in scopus_kb.inline_keyboard for btn in row if btn.callback_data == "flt_set:scopus")
+    assert "✅" in scopus_btn.text
+
+    # Test get_paper_keyboard with active filter
+    paper_kb = get_paper_keyboard(
+        doi="10.1016/j.cose.2024.103982",
+        current_idx=0,
+        total_count=3,
+        active_filter="scopus"
+    )
+    filter_btn = next(btn for row in paper_kb.inline_keyboard for btn in row if btn.callback_data == "act_flt_menu:")
+    assert "Scopus" in filter_btn.text
+
+@pytest.mark.asyncio
+async def test_filter_commands_and_sessions():
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from literax.bot.handlers import (
+        cmd_filter,
+        cmd_scopus,
+        cmd_sinta,
+        USER_SEARCH_CONTEXT
+    )
+
+    # 1. Test /filter command
+    mock_msg = MagicMock()
+    mock_msg.chat.id = 12345
+    mock_msg.text = "/filter"
+    mock_msg.reply = AsyncMock(return_value=True)
+
+    await cmd_filter(mock_msg)
+    assert mock_msg.reply.call_count == 1
+    call_args = mock_msg.reply.call_args[0][0]
+    assert "Filter Indeks & Kategori" in call_args
+
+    # 2. Test /scopus without args (sets pending state)
+    mock_msg_scopus = MagicMock()
+    mock_msg_scopus.chat.id = 12345
+    mock_msg_scopus.text = "/scopus"
+    mock_msg_scopus.reply = AsyncMock(return_value=True)
+    mock_state = MagicMock()
+    mock_state.clear = AsyncMock()
+    mock_state.set_state = AsyncMock()
+
+    await cmd_scopus(mock_msg_scopus, state=mock_state)
+    assert USER_SEARCH_CONTEXT[12345]["filter"] == "scopus"
+    assert mock_msg_scopus.reply.call_count == 1
+
+    # 3. Test /sinta with query
+    with patch("literax.bot.handlers.aggregator.search", new_callable=AsyncMock) as mock_search:
+        mock_search.return_value = [
+            Paper(
+                id="sinta_test_1",
+                title="Sistem Pendukung Keputusan",
+                year=2024,
+                source="GARUDA / SINTA"
+            )
+        ]
+        mock_msg_sinta = MagicMock()
+        mock_msg_sinta.chat.id = 54321
+        mock_msg_sinta.text = "/sinta sistem pendukung keputusan"
+        mock_msg_sinta.reply = AsyncMock(return_value=True)
+
+        await cmd_sinta(mock_msg_sinta)
+        assert mock_search.call_count == 1
+        query_arg = mock_search.call_args[0][0]
+        assert query_arg.providers == ["sinta"]
+        assert USER_SEARCH_CONTEXT[54321]["filter"] == "sinta"
+
+@pytest.mark.asyncio
+async def test_filter_callbacks():
+    from unittest.mock import AsyncMock, MagicMock, patch
+    from literax.bot.handlers import (
+        on_filter_menu_callback,
+        on_filter_set_callback,
+        on_filter_close_callback,
+        USER_SEARCH_CONTEXT
+    )
+
+    # 1. Test act_flt_menu:
+    mock_cb = MagicMock()
+    mock_cb.data = "act_flt_menu:"
+    mock_cb.message.chat.id = 77777
+    mock_cb.message.reply = AsyncMock(return_value=True)
+    mock_cb.answer = AsyncMock()
+
+    await on_filter_menu_callback(mock_cb)
+    assert mock_cb.message.reply.call_count == 1
+    assert mock_cb.answer.call_count == 1
+
+    # 2. Test flt_set:scopus without active query
+    USER_SEARCH_CONTEXT.pop(77777, None)
+    mock_set_cb = MagicMock()
+    mock_set_cb.data = "flt_set:scopus"
+    mock_set_cb.message.chat.id = 77777
+    mock_set_cb.message.reply = AsyncMock(return_value=True)
+    mock_set_cb.answer = AsyncMock()
+
+    await on_filter_set_callback(mock_set_cb)
+    assert USER_SEARCH_CONTEXT[77777]["filter"] == "scopus"
+    assert mock_set_cb.answer.call_count == 1
+
+    # 3. Test flt_set:sinta with active query re-executes search
+    USER_SEARCH_CONTEXT[77777]["query"] = "machine learning"
+    with patch("literax.bot.handlers.aggregator.search", new_callable=AsyncMock) as mock_search:
+        mock_search.return_value = []
+        mock_set_active_cb = MagicMock()
+        mock_set_active_cb.data = "flt_set:sinta"
+        mock_set_active_cb.message.chat.id = 77777
+        mock_set_active_cb.message.edit_text = AsyncMock()
+        mock_set_active_cb.answer = AsyncMock()
+
+        await on_filter_set_callback(mock_set_active_cb)
+        assert mock_search.call_count == 1
+        query_arg = mock_search.call_args[0][0]
+        assert query_arg.providers == ["sinta"]
+
+    # 4. Test flt_close:search
+    mock_close_cb = MagicMock()
+    mock_close_cb.data = "flt_close:search"
+    mock_close_cb.message.chat.id = 77777
+    mock_close_cb.message.reply = AsyncMock(return_value=True)
+    mock_close_cb.answer = AsyncMock()
+    mock_state = MagicMock()
+    mock_state.set_state = AsyncMock()
+
+    await on_filter_close_callback(mock_close_cb, state=mock_state)
+    assert mock_close_cb.answer.call_count == 1
+    assert mock_close_cb.message.reply.call_count == 1
+

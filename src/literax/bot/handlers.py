@@ -14,9 +14,11 @@ from literax.synthesis.matrix import LiteratureMatrixBuilder
 from literax.synthesis.gap_finder import ResearchGapFinder
 from literax.synthesis.brainstormer import ResearchBrainstormer
 from literax.storage.collection import default_collection_manager
+from literax.nlp.normalizer import QueryNormalizer
 from literax.bot.keyboards import (
     get_confirmation_keyboard,
     get_paper_keyboard,
+    get_filter_selection_keyboard,
     get_export_format_keyboard,
     get_main_menu_keyboard
 )
@@ -28,6 +30,8 @@ aggregator = PaperAggregator()
 
 # In-memory session cache for active search results: chat_id -> List[Paper]
 USER_SESSIONS: dict[int, list[Paper]] = {}
+# In-memory context for search parameters: chat_id -> {"query": str, "filter": str, "filters": dict}
+USER_SEARCH_CONTEXT: dict[int, dict] = {}
 
 class BotStates(StatesGroup):
     waiting_for_search_query = State()
@@ -40,13 +44,16 @@ WELCOME_MESSAGE_TEXT = (
     "Selamat datang! Saya dapat menemukan, menganalisis, dan membuat sitasi ilmiah dari "
     "SINTA, Scopus, OpenAlex, Semantic Scholar, dan Crossref.\n\n"
     "⚡ *Menu Input & Perintah:*\n"
-    "• `🔍 Cari Paper` atau `/search` / `/cari <topik>` — Pencarian multi-sumber dengan auto-koreksi typo & direct links\n"
+    "• `🔍 Cari Paper` atau `/search` / `/cari <topik>` — Pencarian multi-sumber dengan auto-koreksi & direct links\n"
+    "• `🏛️ Scopus` atau `/scopus <topik>` — Pencarian khusus paper internasional terindeks Scopus\n"
+    "• `🇮🇩 SINTA` atau `/sinta <topik>` — Pencarian khusus jurnal nasional terakreditasi SINTA / GARUDA\n"
+    "• `🎯 Filter Indeks` atau `/filter` — Atur filter indeks publikasi atau kategori Open Access\n"
     "• `💡 Brainstorm Riset` atau `/brainstorm <topik>` — Rumusan masalah, ide judul inovatif, dataset, dan kebaruan (novelty)\n"
     "• `📊 Literature Matrix` atau `/matrix <topik>` — Sintesis matriks komparasi metodologi\n"
     "• `🔬 Research Gap` atau `/gap <topik>` — Identifikasi celah riset dan peluang novelty baru\n"
     "• `📖 Sitasi` atau `/cite <doi>` — Format sitasi instan (APA 7th, BibTeX)\n"
     "• `📚 Paper Tersimpan` atau `/saved` — Akses dan ekspor koleksi riset Anda\n\n"
-    "💡 *Tips Cepat:* Anda juga bisa langsung memilih tombol menu di bawah atau mengetik pertanyaan topik apa saja di chat!"
+    "💡 *Tips Cepat:* Anda juga bisa langsung mengetik `scopus: <topik>` atau `sinta: <topik>` di chat!"
 )
 
 # ------------------------------------------------------------------------------
@@ -187,6 +194,70 @@ async def on_state_gap_topic(message: types.Message, state: FSMContext):
 # 4. Search Commands & Logic
 # ------------------------------------------------------------------------------
 
+@router.message(Command("filter", "indeks", "sumber"))
+async def cmd_filter(message: types.Message):
+    logger.info("🎯 User %s called /filter", message.chat.id)
+    chat_id = message.chat.id
+    current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
+    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    await safe_reply(
+        message,
+        "🎯 *Pengaturan Filter Indeks & Kategori*\n\n"
+        "Pilih indeks atau kriteria yang Anda inginkan untuk memfokuskan hasil riset:\n\n"
+        "• 🏛️ *Scopus*: Publikasi jurnal & prosiding internasional bereputasi\n"
+        "• 🇮🇩 *SINTA*: Jurnal terakreditasi nasional Indonesia (GARUDA / SINTA)\n"
+        "• 📖 *OpenAlex*: Repositori bibliografi terbuka universal\n"
+        "• 🔓 *Open Access*: Artikel dengan akses dokumen penuh (Direct PDF)\n"
+        "• 📅 *Terbaru*: Khusus publikasi tahun 2023 ke atas\n\n"
+        "💡 *Tips:* Anda juga dapat menggunakan perintah langsung seperti:\n"
+        "`/scopus <topik>` atau `/sinta <topik>`\n"
+        "atau ketik langsung di chat: `scopus: <topik>`",
+        reply_markup=kb,
+        parse_mode=ParseMode.MARKDOWN
+    )
+
+@router.message(Command("scopus"))
+async def cmd_scopus(message: types.Message, state: FSMContext | None = None):
+    logger.info("🏛️ User %s called /scopus", message.chat.id)
+    if state:
+        await state.clear()
+    text = message.text or ""
+    parts = text.split(maxsplit=1)
+    raw_query = parts[1].strip() if len(parts) > 1 else ""
+    if not raw_query:
+        if state:
+            await state.set_state(BotStates.waiting_for_search_query)
+        USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "scopus", "filters": {"providers": ["scopus"]}}
+        await safe_reply(
+            message,
+            "🏛️ *Pencarian Khusus Scopus*\n\nSilakan ketik topik riset yang ingin dicari di Scopus:\n_Contoh:_ `/scopus machine learning cybersecurity`",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+    await process_search_query(message, raw_query, extra_filters={"providers": ["scopus"]}, active_filter_key="scopus")
+
+@router.message(Command("sinta", "garuda"))
+async def cmd_sinta(message: types.Message, state: FSMContext | None = None):
+    logger.info("🇮🇩 User %s called /sinta", message.chat.id)
+    if state:
+        await state.clear()
+    text = message.text or ""
+    parts = text.split(maxsplit=1)
+    raw_query = parts[1].strip() if len(parts) > 1 else ""
+    if not raw_query:
+        if state:
+            await state.set_state(BotStates.waiting_for_search_query)
+        USER_SEARCH_CONTEXT[message.chat.id] = {"filter": "sinta", "filters": {"providers": ["sinta"]}}
+        await safe_reply(
+            message,
+            "🇮🇩 *Pencarian Khusus SINTA / GARUDA*\n\nSilakan ketik topik riset yang ingin dicari di jurnal SINTA:\n_Contoh:_ `/sinta sistem pendukung keputusan`",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+        return
+    await process_search_query(message, raw_query, extra_filters={"providers": ["sinta"]}, active_filter_key="sinta")
+
 @router.message(Command("search", "cari"))
 async def cmd_search(message: types.Message, state: FSMContext | None = None):
     if state:
@@ -211,14 +282,56 @@ async def cmd_search(message: types.Message, state: FSMContext | None = None):
 
     await process_search_query(message, raw_query)
 
-async def process_search_query(message: types.Message, raw_query: str):
-    logger.info("🔎 Searching query from user %s: '%s'", message.chat.id, raw_query)
+async def process_search_query(
+    message: types.Message,
+    raw_query: str,
+    extra_filters: dict | None = None,
+    active_filter_key: str | None = None
+):
+    logger.info("🔎 Searching query from user %s: '%s' (extra_filters=%s)", message.chat.id, raw_query, extra_filters)
     try:
-        # Step 1: Fuzzy Auto-Correct
-        correction = fuzzy_engine.process_query(raw_query)
+        # Step 0: Extract syntax filters (e.g. scopus:, sinta:, oa:, year:2024)
+        clean_query, extracted_filters = QueryNormalizer.extract_filters(raw_query)
+
+        saved_ctx = USER_SEARCH_CONTEXT.get(message.chat.id, {})
+        saved_flt = saved_ctx.get("filter", "all")
+
+        # Determine effective filters and active_filter_key
+        if extracted_filters:
+            merged_filters = {**(extra_filters or {}), **extracted_filters}
+            flt_key = active_filter_key
+            if not flt_key:
+                if "providers" in merged_filters and merged_filters["providers"]:
+                    p = merged_filters["providers"][0]
+                    flt_key = "sinta" if p in ["sinta", "garuda"] else p
+                elif merged_filters.get("open_access_only"):
+                    flt_key = "oa"
+                elif merged_filters.get("year_start"):
+                    flt_key = "recent"
+                else:
+                    flt_key = "all"
+        else:
+            if extra_filters is not None:
+                merged_filters = extra_filters
+                flt_key = active_filter_key or "all"
+            elif saved_flt and saved_flt != "all":
+                merged_filters = {}
+                if saved_flt in ["scopus", "sinta", "openalex"]:
+                    merged_filters["providers"] = [saved_flt]
+                elif saved_flt == "oa":
+                    merged_filters["open_access_only"] = True
+                elif saved_flt == "recent":
+                    merged_filters["year_start"] = 2023
+                flt_key = saved_flt
+            else:
+                merged_filters = {}
+                flt_key = "all"
+
+        # Step 1: Fuzzy Auto-Correct on clean query
+        correction = fuzzy_engine.process_query(clean_query)
 
         if correction.action == "PROMPT_USER":
-            kb = get_confirmation_keyboard(correction.corrected_query, raw_query)
+            kb = get_confirmation_keyboard(correction.corrected_query, clean_query)
             await safe_reply(
                 message,
                 f"🤔 *Maksud Anda:*\n_{correction.corrected_query}_\n\nKeyakinan: *{int(correction.overall_confidence * 100)}%*",
@@ -227,18 +340,41 @@ async def process_search_query(message: types.Message, raw_query: str):
             )
             return
 
-        search_term = correction.corrected_query if correction.action == "AUTO_CORRECTED" else raw_query
-        await execute_search(message, search_term, correction if correction.action == "AUTO_CORRECTED" else None)
+        search_term = correction.corrected_query if correction.action == "AUTO_CORRECTED" else clean_query
+        await execute_search(
+            message,
+            search_term,
+            filters=merged_filters,
+            active_filter_key=flt_key,
+            correction=correction if correction.action == "AUTO_CORRECTED" else None
+        )
     except Exception as e:
         logger.exception("Error processing search: %s", e)
         await safe_reply(message, f"❌ Terjadi kesalahan saat memproses pencarian: {str(e)}", parse_mode=None)
 
-async def execute_search(message: types.Message, search_term: str, correction=None, edit_message: types.Message | None = None):
+async def execute_search(
+    message: types.Message,
+    search_term: str,
+    filters: dict | None = None,
+    active_filter_key: str = "all",
+    correction=None,
+    edit_message: types.Message | None = None
+):
     info_msg = ""
     if correction:
         info_msg = f"🔎 *Koreksi Kata Kunci:* `{correction.corrected_query}` (Akurasi: {int(correction.overall_confidence * 100)}%)\n\n"
 
-    prompt_text = f"{info_msg}⚡ Mencari di OpenAlex, Scopus, Crossref, dan SINTA..."
+    filter_label_map = {
+        "all": "OpenAlex, Scopus, Crossref, dan SINTA",
+        "scopus": "🏛️ Scopus (International Indexed)",
+        "sinta": "🇮🇩 SINTA / GARUDA (National Accredited)",
+        "openalex": "📖 OpenAlex (Global Open Index)",
+        "oa": "🔓 Open Access (Full Text)",
+        "recent": "📅 Publikasi Terbaru (>= 2023)"
+    }
+    src_label = filter_label_map.get(active_filter_key, "Multi-sumber")
+    prompt_text = f"{info_msg}⚡ Mencari di {src_label}..."
+
     if edit_message:
         status_msg = edit_message
         try:
@@ -249,21 +385,44 @@ async def execute_search(message: types.Message, search_term: str, correction=No
         status_msg = await safe_reply(message, prompt_text, parse_mode=ParseMode.MARKDOWN)
 
     try:
-        # Step 2: Multi-source search
-        query_obj = SearchQuery(raw_query=search_term, limit=5)
+        # Step 2: Multi-source search with optional filters
+        query_kwargs = {"raw_query": search_term, "limit": 5}
+        if filters:
+            if "providers" in filters:
+                query_kwargs["providers"] = filters["providers"]
+            if "open_access_only" in filters:
+                query_kwargs["open_access_only"] = filters["open_access_only"]
+            if "year_start" in filters:
+                query_kwargs["year_start"] = filters["year_start"]
+            if "year_end" in filters:
+                query_kwargs["year_end"] = filters["year_end"]
+
+        query_obj = SearchQuery(**query_kwargs)
         papers = await aggregator.search(query_obj)
 
+        chat_id = message.chat.id
+        USER_SEARCH_CONTEXT[chat_id] = {
+            "query": search_term,
+            "filter": active_filter_key,
+            "filters": filters or {}
+        }
+
         if not papers:
-            not_found_text = f"{info_msg}❌ Tidak ditemukan paper ilmiah untuk `{search_term}`."
+            not_found_text = f"{info_msg}❌ Tidak ditemukan paper ilmiah untuk `{search_term}` dengan filter *{src_label}*."
             try:
                 await status_msg.edit_text(not_found_text, parse_mode=ParseMode.MARKDOWN)
             except Exception:
                 await status_msg.edit_text(not_found_text, parse_mode=None)
             return
 
-        chat_id = message.chat.id
         USER_SESSIONS[chat_id] = papers
-        await send_paper_result(message, papers, index=0, edit_message=status_msg)
+        await send_paper_result(
+            message,
+            papers,
+            index=0,
+            active_filter=active_filter_key,
+            edit_message=status_msg
+        )
     except Exception as e:
         logger.exception("Error executing paper search: %s", e)
         err_text = f"❌ Terjadi kesalahan saat mencari literatur: {str(e)}"
@@ -272,7 +431,13 @@ async def execute_search(message: types.Message, search_term: str, correction=No
         except Exception:
             await safe_reply(message, err_text, parse_mode=None)
 
-async def send_paper_result(message: types.Message, papers: list[Paper], index: int, edit_message: types.Message | None = None):
+async def send_paper_result(
+    message: types.Message,
+    papers: list[Paper],
+    index: int,
+    active_filter: str = "all",
+    edit_message: types.Message | None = None
+):
     paper = papers[index]
     authors_str = ", ".join([a.name for a in paper.authors[:3]]) if paper.authors else "Unknown"
     abstract_preview = (paper.abstract[:240] + "...") if paper.abstract else "Abstrak belum tersedia di ringkasan publik."
@@ -287,8 +452,18 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         links.append(f"[Web Portal]({paper.landing_page_url})")
     link_display = " • ".join(links) if links else "`Link publik belum terindeks`"
 
+    filter_label_map = {
+        "all": "Semua Indeks",
+        "scopus": "Scopus",
+        "sinta": "SINTA / GARUDA",
+        "openalex": "OpenAlex",
+        "oa": "Open Access",
+        "recent": "Terbaru"
+    }
+    filter_badge = f" | 🎯 `{filter_label_map.get(active_filter, active_filter)}`" if active_filter != "all" else ""
+
     text = (
-        f"📚 *HASIL PENCARIAN ({index + 1}/{len(papers)})*\n"
+        f"📚 *HASIL PENCARIAN ({index + 1}/{len(papers)})*{filter_badge}\n"
         f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         f"📄 *{paper.title}*\n"
         f"👤 *Penulis:* {authors_str}\n"
@@ -304,7 +479,8 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         current_idx=index,
         total_count=len(papers),
         direct_url=paper.direct_url,
-        pdf_url=paper.full_text_url
+        pdf_url=paper.full_text_url,
+        active_filter=active_filter
     )
     if edit_message:
         try:
@@ -312,8 +488,9 @@ async def send_paper_result(message: types.Message, papers: list[Paper], index: 
         except Exception:
             # Fallback without markdown if title/abstract has entity conflicts
             plain_link = paper.direct_url or "Belum tersedia"
+            plain_badge = f" | Filter: {filter_label_map.get(active_filter, active_filter)}" if active_filter != "all" else ""
             fallback_text = (
-                f"📚 HASIL PENCARIAN ({index + 1}/{len(papers)})\n"
+                f"📚 HASIL PENCARIAN ({index + 1}/{len(papers)}){plain_badge}\n"
                 f"━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
                 f"📄 {paper.title}\n"
                 f"👤 Penulis: {authors_str}\n"
@@ -556,29 +733,136 @@ async def fallback_text_search(message: types.Message, state: FSMContext | None 
 @router.callback_query(F.data.startswith("search_corr:"))
 async def on_search_corrected(callback: types.CallbackQuery):
     corr_term = callback.data.split(":", 1)[1]
+    chat_id = callback.message.chat.id
+    saved_ctx = USER_SEARCH_CONTEXT.get(chat_id, {})
+    flt_key = saved_ctx.get("filter", "all")
+    filters = saved_ctx.get("filters", {})
     try:
         await callback.message.edit_reply_markup(reply_markup=None)
     except Exception:
         pass
-    await execute_search(callback.message, corr_term, edit_message=callback.message)
+    await execute_search(
+        callback.message,
+        corr_term,
+        filters=filters,
+        active_filter_key=flt_key,
+        edit_message=callback.message
+    )
     await callback.answer()
 
 @router.callback_query(F.data.startswith("search_raw:"))
 async def on_search_raw(callback: types.CallbackQuery):
     raw_term = callback.data.split(":", 1)[1]
+    chat_id = callback.message.chat.id
+    saved_ctx = USER_SEARCH_CONTEXT.get(chat_id, {})
+    flt_key = saved_ctx.get("filter", "all")
+    filters = saved_ctx.get("filters", {})
     try:
         await callback.message.edit_reply_markup(reply_markup=None)
     except Exception:
         pass
-    await execute_search(callback.message, raw_term, edit_message=callback.message)
+    await execute_search(
+        callback.message,
+        raw_term,
+        filters=filters,
+        active_filter_key=flt_key,
+        edit_message=callback.message
+    )
     await callback.answer()
 
 @router.callback_query(F.data.startswith("nav_page:"))
 async def on_nav_page(callback: types.CallbackQuery):
     idx = int(callback.data.split(":")[1])
-    papers = USER_SESSIONS.get(callback.message.chat.id, [])
+    chat_id = callback.message.chat.id
+    papers = USER_SESSIONS.get(chat_id, [])
+    active_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
     if 0 <= idx < len(papers):
-        await send_paper_result(callback.message, papers, index=idx, edit_message=callback.message)
+        await send_paper_result(
+            callback.message,
+            papers,
+            index=idx,
+            active_filter=active_flt,
+            edit_message=callback.message
+        )
+    await callback.answer()
+
+@router.callback_query(F.data == "act_flt_menu:")
+async def on_filter_menu_callback(callback: types.CallbackQuery):
+    chat_id = callback.message.chat.id
+    current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
+    kb = get_filter_selection_keyboard(active_filter=current_flt)
+    await safe_reply(
+        callback.message,
+        "🎯 *Filter Indeks & Kategori Riset*\n\n"
+        "Pilih indeks publikasi atau kategori untuk memfilter hasil pencarian:\n"
+        "• 🏛️ *Scopus*: Jurnal & prosiding internasional terindeks Scopus\n"
+        "• 🇮🇩 *SINTA / GARUDA*: Jurnal nasional terakreditasi Kemdikbudristek\n"
+        "• 📖 *OpenAlex*: Basis data bibliometrik global terbuka\n"
+        "• 🔓 *Open Access*: Artikel gratis dapat diunduh (PDF langsung)\n"
+        "• 📅 *Terbaru*: Khusus publikasi mutakhir (>= 2023)\n\n"
+        f"Status aktif: *{current_flt.upper()}*",
+        reply_markup=kb,
+        parse_mode=ParseMode.MARKDOWN
+    )
+    await callback.answer()
+
+@router.callback_query(F.data.startswith("flt_set:"))
+async def on_filter_set_callback(callback: types.CallbackQuery):
+    key = callback.data.split(":")[1]
+    chat_id = callback.message.chat.id
+    if chat_id not in USER_SEARCH_CONTEXT:
+        USER_SEARCH_CONTEXT[chat_id] = {}
+    USER_SEARCH_CONTEXT[chat_id]["filter"] = key
+
+    filter_label_map = {
+        "all": "🌐 Semua Indeks",
+        "scopus": "🏛️ Scopus",
+        "sinta": "🇮🇩 SINTA / GARUDA",
+        "openalex": "📖 OpenAlex",
+        "oa": "🔓 Open Access",
+        "recent": "📅 Terbaru (>=2023)"
+    }
+    label = filter_label_map.get(key, key)
+
+    extra_filters = {}
+    if key in ["scopus", "sinta", "openalex"]:
+        extra_filters["providers"] = [key]
+    elif key == "oa":
+        extra_filters["open_access_only"] = True
+    elif key == "recent":
+        extra_filters["year_start"] = 2023
+    USER_SEARCH_CONTEXT[chat_id]["filters"] = extra_filters
+
+    current_query = USER_SEARCH_CONTEXT[chat_id].get("query")
+    if current_query:
+        await callback.answer(f"Menerapkan filter: {label}")
+        await execute_search(
+            callback.message,
+            current_query,
+            filters=extra_filters,
+            active_filter_key=key,
+            edit_message=callback.message
+        )
+    else:
+        await callback.answer(f"Filter diset: {label}")
+        await safe_reply(
+            callback.message,
+            f"✅ Filter aktif diset ke: *{label}*\n\nSilakan ketik topik riset yang ingin Anda cari:",
+            reply_markup=get_main_menu_keyboard(),
+            parse_mode=ParseMode.MARKDOWN
+        )
+
+@router.callback_query(F.data == "flt_close:search")
+async def on_filter_close_callback(callback: types.CallbackQuery, state: FSMContext):
+    await state.set_state(BotStates.waiting_for_search_query)
+    chat_id = callback.message.chat.id
+    current_flt = USER_SEARCH_CONTEXT.get(chat_id, {}).get("filter", "all")
+    await safe_reply(
+        callback.message,
+        f"🔍 *Siap mencari paper!*\nFilter aktif saat ini: *{current_flt.upper()}*\n\nSilakan ketik kata kunci atau topik riset Anda:",
+        reply_markup=get_main_menu_keyboard(),
+        parse_mode=ParseMode.MARKDOWN
+    )
     await callback.answer()
 
 @router.callback_query(F.data.startswith("act_cite:"))

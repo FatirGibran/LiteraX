@@ -36,6 +36,9 @@ async def run_bot() -> None:
         commands = [
             BotCommand(command="cari", description="🔍 Cari paper ilmiah & literatur"),
             BotCommand(command="search", description="🔍 Search academic literature"),
+            BotCommand(command="scopus", description="🏛️ Cari khusus publikasi Scopus"),
+            BotCommand(command="sinta", description="🇮🇩 Cari khusus jurnal SINTA / GARUDA"),
+            BotCommand(command="filter", description="🎯 Atur filter indeks & kategori"),
             BotCommand(command="brainstorm", description="💡 Brainstorm ide riset & novelty"),
             BotCommand(command="saved", description="📚 Koleksi paper tersimpan"),
             BotCommand(command="matrix", description="📊 Buat literature review matrix"),

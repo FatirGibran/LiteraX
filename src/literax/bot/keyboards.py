@@ -36,7 +36,8 @@ def get_paper_keyboard(
     current_idx: int,
     total_count: int,
     direct_url: str | None = None,
-    pdf_url: str | None = None
+    pdf_url: str | None = None,
+    active_filter: str = "all"
 ) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
@@ -65,14 +66,48 @@ def get_paper_keyboard(
         builder.button(text="Next ➡️", callback_data=f"nav_page:{current_idx+1}")
         nav_buttons_count += 1
 
+    # Filter toggle button
+    filter_label_map = {
+        "all": "🌐 Semua",
+        "scopus": "🏛️ Scopus",
+        "sinta": "🇮🇩 SINTA",
+        "openalex": "📖 OpenAlex",
+        "oa": "🔓 OpenAccess",
+        "recent": "📅 Terbaru"
+    }
+    cur_label = filter_label_map.get(active_filter, "🌐 Filter")
+    builder.button(text=f"🎯 Filter Indeks: {cur_label}", callback_data="act_flt_menu:")
+
     sizes = []
     if link_buttons_count > 0:
         sizes.append(link_buttons_count)
     sizes.append(4)
     if nav_buttons_count > 0:
         sizes.append(nav_buttons_count)
+    sizes.append(1)
 
     builder.adjust(*sizes)
+    return builder.as_markup()
+
+def get_filter_selection_keyboard(active_filter: str = "all") -> InlineKeyboardMarkup:
+    """Generates inline keyboard for filtering searches by index/category."""
+    builder = InlineKeyboardBuilder()
+
+    filters = [
+        ("all", "🌐 Semua Indeks"),
+        ("scopus", "🏛️ Scopus"),
+        ("sinta", "🇮🇩 SINTA / GARUDA"),
+        ("openalex", "📖 OpenAlex"),
+        ("oa", "🔓 Open Access"),
+        ("recent", "📅 Terbaru (>=2023)"),
+    ]
+
+    for key, label in filters:
+        indicator = " ✅" if key == active_filter else ""
+        builder.button(text=f"{label}{indicator}", callback_data=f"flt_set:{key}")
+
+    builder.button(text="🔍 Mulai Cari Topik", callback_data="flt_close:search")
+    builder.adjust(2, 2, 2, 1)
     return builder.as_markup()
 
 def get_export_format_keyboard() -> InlineKeyboardMarkup:
