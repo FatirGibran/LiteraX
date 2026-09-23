@@ -33,14 +33,18 @@ class ResearchGapFinder:
                 title="Cross-Paradigm Empirical Benchmarking Gap",
                 description="Existing works deploy traditional classifiers (e.g. Random Forest, SVM) and modern deep architectures on disjoint datasets without unified feature alignment under identical resource constraints.",
                 category="Methodology",
-                supporting_papers=[p.title for p in papers[:2]]
+                severity="High",
+                supporting_papers=[p.title for p in papers[:2]],
+                novelty_opportunity="Peluang Novelty: Bangun benchmark komparatif terstandarisasi yang menguji kedua paradigma pada korpus data yang sama dengan metrik trade-off komputasi vs akurasi."
             ))
         else:
             gaps.append(ResearchGapItem(
                 title="Model Exploration & Comparative Baseline Gap",
                 description=f"Current literature around '{topic}' heavily concentrates on a narrow set of classifiers ({', '.join(list(all_algos)[:2])}) lacking exploration into hybrid ensemble architectures.",
                 category="Methodology",
-                supporting_papers=[p.title for p in papers[:2]]
+                severity="Medium",
+                supporting_papers=[p.title for p in papers[:2]],
+                novelty_opportunity="Peluang Novelty: Kembangkan arsitektur hybrid ensemble (menggabungkan representasi fitur leksikal dan deep embeddings) untuk meningkatkan generalisasi."
             ))
 
         # Gap 2: Dataset diversity & localized evasion
@@ -48,7 +52,9 @@ class ResearchGapFinder:
             title="Adversarial Robustness & Concept Drift Gap",
             description="The majority of evaluations rely on static, clean offline datasets. There is a critical shortage of longitudinal studies measuring model degradation against zero-day evasion attacks and obfuscation over time.",
             category="Dataset",
-            supporting_papers=[p.title for p in papers]
+            severity="High",
+            supporting_papers=[p.title for p in papers],
+            novelty_opportunity="Peluang Novelty: Lakukan pengujian ketahanan terhadap serangan adversarial atau evaluasi drift model secara periodik (longitudinal) menggunakan data riil."
         ))
 
         # Gap 3: Edge & Inference Latency Trade-off
@@ -56,7 +62,9 @@ class ResearchGapFinder:
             title="Real-Time Edge Deployment Feasibility",
             description="High reported accuracy frequently comes at the cost of high parameter count and inference latency, leaving a research gap in model pruning, quantization, or knowledge distillation for edge inspection.",
             category="Scalability",
-            supporting_papers=[p.title for p in papers[-2:]]
+            severity="Medium",
+            supporting_papers=[p.title for p in papers[-2:]],
+            novelty_opportunity="Peluang Novelty: Terapkan teknik knowledge distillation atau model quantization agar model akurasi tinggi dapat berjalan secara real-time pada resource terbatas (edge/IoT)."
         ))
 
         return ResearchGapReport(topic=topic, gaps=gaps)

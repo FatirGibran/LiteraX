@@ -43,6 +43,13 @@ class PaperAnalyzer:
         findings = sentences[-1] if sentences else "Outperformed baseline models with high classification accuracy."
         limitations = "Evaluated on bounded offline corpus; requires validation under real-time network traffic and concept drift."
 
+        reasoning = (
+            f"Paper ini memprioritaskan pemodelan dengan {', '.join(found_algos[:2])} guna mengoptimalkan "
+            f"performa {found_metrics[0]} pada domain {dataset_name}. "
+            f"Walaupun temuan menunjukkan efektivitas tinggi, keterbatasan pengujian pada korpus terbatas "
+            f"mengindikasikan bahwa arsitektur ini memerlukan validasi lebih lanjut terhadap dataset zero-day dan kondisi riil."
+        )
+
         return PaperAnalysis(
             paper_id=paper.id,
             title=paper.title,
@@ -54,7 +61,8 @@ class PaperAnalyzer:
             evaluation_metrics=found_metrics,
             key_findings=findings,
             limitations=limitations,
-            future_work="Extension to multi-modal features and distributed edge deployment."
+            future_work="Extension to multi-modal features and distributed edge deployment.",
+            reasoning=reasoning
         )
 
     @classmethod
@@ -65,7 +73,7 @@ class PaperAnalyzer:
     @classmethod
     def to_markdown_summary(cls, analysis: PaperAnalysis) -> str:
         """Formats a PaperAnalysis instance into clean structured Markdown."""
-        return (
+        text = (
             f"### 📑 {analysis.title}\n\n"
             f"- **🎯 Objective:** {analysis.research_objective}\n"
             f"- **🔬 Methodology:** {analysis.methodology}\n"
@@ -75,3 +83,6 @@ class PaperAnalyzer:
             f"- **💡 Key Findings:** {analysis.key_findings}\n"
             f"- **⚠️ Limitations:** {analysis.limitations}"
         )
+        if analysis.reasoning:
+            text += f"\n- **🧠 Scientific Reasoning:** {analysis.reasoning}"
+        return text
