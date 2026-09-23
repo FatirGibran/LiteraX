@@ -220,6 +220,25 @@ LiteraX is built strictly as a **research assistant tool**.
 
 ---
 
+## 🚀 Deployment & Operations
+
+### Docker Compose Quickstart
+Run the complete LiteraX stack (PostgreSQL + pgvector, Redis, FastAPI, Telegram Bot) with Docker:
+
+```bash
+docker compose up -d --build
+```
+
+### Server Setup (Ubuntu / Debian)
+For automated bare-metal or cloud VM deployment (Systemd + Nginx):
+
+```bash
+chmod +x deploy/setup_server.sh
+./deploy/setup_server.sh
+```
+
+---
+
 ## 🧪 Testing
 
 LiteraX is thoroughly tested using `pytest`. To execute the entire test suite:
