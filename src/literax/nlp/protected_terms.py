@@ -15,6 +15,11 @@ class ProtectedTermsManager:
                 terms = json.load(f)
                 self.protected_terms = {t.lower() for t in terms}
 
+    @property
+    def total_terms(self) -> int:
+        """Returns the total number of protected terms currently loaded."""
+        return len(self.protected_terms)
+
     def is_protected(self, token: str) -> bool:
         """Returns True if the token is a protected scientific/technical term."""
         clean = token.lower().strip()
