@@ -7,6 +7,13 @@ from literax.synthesis.analyzer import PaperAnalyzer
 class LiteratureMatrixBuilder:
     """Builds comparative Literature Review Matrices and handles Markdown/CSV exports."""
 
+    SUPPORTED_EXPORT_FORMATS = ["markdown", "csv", "bibtex", "json"]
+
+    @classmethod
+    def is_format_supported(cls, export_format: str) -> bool:
+        """Returns True if the specified export format is supported."""
+        return export_format.lower().strip() in cls.SUPPORTED_EXPORT_FORMATS
+
     @classmethod
     def build_matrix(cls, topic: str, papers: List[Paper]) -> LiteratureMatrix:
         rows: List[LiteratureMatrixRow] = []
