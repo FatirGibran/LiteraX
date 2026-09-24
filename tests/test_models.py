@@ -56,6 +56,31 @@ def test_paper_authors_summary_variants():
     )
     assert p3.authors_summary == "Hopper et al."
 
+def test_paper_to_summary_dict():
+    paper = Paper(
+        id="p100",
+        title="Attention Is All You Need",
+        doi="10.5555/3295222.3295349",
+        year=2017,
+        authors=[Author(name="Ashish Vaswani"), Author(name="Noam Shazeer")],
+        journal="NeurIPS",
+        citation_count=100000,
+        source="ArXiv",
+        open_access=True,
+        full_text_url="https://arxiv.org/pdf/1706.03762.pdf"
+    )
+    summary = paper.to_summary_dict()
+    assert summary["id"] == "p100"
+    assert summary["title"] == "Attention Is All You Need"
+    assert summary["authors"] == "Vaswani & Shazeer"
+    assert summary["year"] == 2017
+    assert summary["journal"] == "NeurIPS"
+    assert summary["citations"] == 100000
+    assert summary["source"] == "ArXiv"
+    assert summary["doi"] == "10.5555/3295222.3295349"
+    assert summary["direct_url"] == "https://arxiv.org/pdf/1706.03762.pdf"
+    assert summary["open_access"] is True
+
 def test_search_query_defaults():
     query = SearchQuery(raw_query="machine learning")
     assert query.limit == 10
