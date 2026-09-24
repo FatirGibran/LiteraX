@@ -59,6 +59,23 @@ class Paper(BaseModel):
         return self.citation_count >= 100
 
     @property
+    def authors_summary(self) -> str:
+        """Returns short author summary (e.g. 'Doe et al.' or 'Doe & Smith' or 'Doe' or 'Anonymous')."""
+        if not self.authors:
+            return "Anonymous"
+        names = [a.name.strip().split()[-1] if a.name.strip() else "Unknown" for a in self.authors]
+        if len(names) == 1:
+            return names[0]
+        elif len(names) == 2:
+            return f"{names[0]} & {names[1]}"
+        return f"{names[0]} et al."
+
+    @property
+    def year_str(self) -> str:
+        """Returns publication year formatted as string or 'n.d.' if unknown."""
+        return str(self.year) if self.year else "n.d."
+
+    @property
     def direct_url(self) -> Optional[str]:
         """Returns the most direct URL to access the paper (full text PDF, DOI, or landing page)."""
         if self.full_text_url and self.full_text_url.strip():
