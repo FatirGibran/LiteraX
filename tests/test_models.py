@@ -1,5 +1,5 @@
 import pytest
-from literax.models import Paper, Author, SearchQuery, ResearchGapItem
+from literax.models import Paper, Author, SearchQuery, ResearchGapItem, TokenCorrection
 
 def test_paper_properties():
     author1 = Author(name="Alan Turing")
@@ -125,3 +125,16 @@ def test_research_gap_item_properties():
     )
     assert gap2.is_high_severity is False
     assert gap2.supporting_count == 0
+
+def test_token_correction_properties():
+    t1 = TokenCorrection(original="machne", corrected="machine", status="CORRECTED", confidence=0.92)
+    assert t1.is_corrected is True
+    assert t1.is_protected is False
+
+    t2 = TokenCorrection(original="svm", corrected="svm", status="PROTECTED", confidence=1.0)
+    assert t2.is_corrected is False
+    assert t2.is_protected is True
+
+    t3 = TokenCorrection(original="learning", corrected="learning", status="UNCHANGED", confidence=1.0)
+    assert t3.is_corrected is False
+    assert t3.is_protected is False
