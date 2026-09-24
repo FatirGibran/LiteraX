@@ -41,3 +41,12 @@ def test_brainstormer_with_seed_papers():
     assert "IoT Security" in md
     assert "https://example.com/paper.pdf" in md
     assert "REKOMENDASI 3 TOPIK / JUDUL RISET" in md
+
+def test_brainstorm_result_get_idea():
+    result = ResearchBrainstormer.generate("NLP")
+    assert result.get_idea(0) is not None
+    assert result.get_idea(0).title_id != ""
+    assert result.get_idea(1) is not None
+    assert result.get_idea(2) is not None
+    assert result.get_idea(3) is None
+    assert result.get_idea(-1) is None
