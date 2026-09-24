@@ -219,6 +219,16 @@ class ResearchGapItem(BaseModel):
     supporting_papers: List[str] = Field(default_factory=list)
     novelty_opportunity: Optional[str] = None
 
+    @property
+    def is_high_severity(self) -> bool:
+        """Returns True if severity is High."""
+        return self.severity.lower() == "high"
+
+    @property
+    def supporting_count(self) -> int:
+        """Returns the number of supporting papers associated with this research gap."""
+        return len(self.supporting_papers)
+
 class ResearchGapReport(BaseModel):
     """Comprehensive synthesis report highlighting identified research gaps."""
     topic: str
