@@ -38,3 +38,20 @@ def test_literature_matrix_supported_formats():
     assert LiteratureMatrixBuilder.is_format_supported("JSON") is True
     assert LiteratureMatrixBuilder.is_format_supported("pdf") is False
     assert len(LiteratureMatrixBuilder.SUPPORTED_EXPORT_FORMATS) == 4
+
+def test_literature_matrix_instance_export_helpers():
+    p1 = Paper(
+        id="p1",
+        title="BERT Representation",
+        authors=[Author(name="Devlin")],
+        year=2019,
+        source="ArXiv"
+    )
+    matrix = LiteratureMatrixBuilder.build_matrix("BERT", [p1])
+    md = matrix.to_markdown()
+    assert "# 📚 Literature Review Matrix: BERT" in md
+    assert "BERT Representation" in md
+
+    csv_out = matrix.to_csv()
+    assert "Paper Title" in csv_out
+    assert "BERT Representation" in csv_out
