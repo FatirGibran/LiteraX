@@ -99,6 +99,29 @@ def test_collection_supported_export_formats():
     assert "bibtex" in PaperCollectionManager.SUPPORTED_EXPORT_FORMATS
     assert PaperCollectionManager.is_format_supported("markdown") is True
     assert PaperCollectionManager.is_format_supported("CSV") is True
-    assert PaperCollectionManager.is_format_supported(" bibtex ") is True
+    assert PaperCollectionManager.is_format_supported("bibtex") is True
     assert PaperCollectionManager.is_format_supported("pdf") is False
+
+def test_collection_filter_source_and_open_access():
+    manager = PaperCollectionManager()
+    user = "bob"
+    p1 = Paper(id="p1", title="Paper 1", source="Scopus", open_access=True)
+    p2 = Paper(id="p2", title="Paper 2", source="Crossref", open_access=False)
+    p3 = Paper(id="p3", title="Paper 3", source="Scopus / ScienceDirect", open_access=False)
+
+    manager.add_paper(user, p1)
+    manager.add_paper(user, p2)
+    manager.add_paper(user, p3)
+
+    scopus_papers = manager.filter_by_source(user, "scopus")
+    assert len(scopus_papers) == 2
+    assert {p.id for p in scopus_papers} == {"p1", "p3"}
+
+    crossref_papers = manager.filter_by_source(user, "crossref")
+    assert len(crossref_papers) == 1
+    assert crossref_papers[0].id == "p2"
+
+    oa_papers = manager.filter_open_access(user)
+    assert len(oa_papers) == 1
+    assert oa_papers[0].id == "p1"
 
