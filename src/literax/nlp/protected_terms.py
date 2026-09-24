@@ -20,6 +20,10 @@ class ProtectedTermsManager:
         """Returns the total number of protected terms currently loaded."""
         return len(self.protected_terms)
 
+    def get_all_protected_terms(self) -> Set[str]:
+        """Returns a copy of all loaded protected terms."""
+        return self.protected_terms.copy()
+
     def is_protected(self, token: str) -> bool:
         """Returns True if the token is a protected scientific/technical term."""
         clean = token.lower().strip()
