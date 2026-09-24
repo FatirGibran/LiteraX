@@ -58,5 +58,17 @@ def test_deduplicator_custom_threshold():
     )
     # With a very high threshold (0.99), these are distinct
     assert not Deduplicator.are_duplicates(p1, p2, title_threshold=0.99)
+
+def test_deduplicator_get_duplicate_clusters():
+    p1 = Paper(id="p1", title="Quantum Computing Algorithms", doi="10.1000/1", source="S1")
+    p2 = Paper(id="p2", title="Quantum Computing Algorithms", doi="10.1000/1", source="S2")
+    p3 = Paper(id="p3", title="Unrelated Machine Learning Study", doi="10.1000/2", source="S3")
+
+    clusters = Deduplicator.get_duplicate_clusters([p1, p2, p3])
+    assert len(clusters) == 2
+    assert len(clusters[0]) == 2
+    assert len(clusters[1]) == 1
+    assert {p.id for p in clusters[0]} == {"p1", "p2"}
+    assert clusters[1][0].id == "p3"
     # With a lower threshold (0.75), these might match
     assert Deduplicator.are_duplicates(p1, p2, title_threshold=0.75)
