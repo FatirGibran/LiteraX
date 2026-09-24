@@ -121,6 +121,21 @@ class Paper(BaseModel):
 
         return "; ".join(reasons) + "."
 
+    def to_summary_dict(self) -> Dict[str, Any]:
+        """Returns a concise summary dictionary suitable for lightweight serialization and UI previews."""
+        return {
+            "id": self.id,
+            "title": self.display_title,
+            "authors": self.authors_summary,
+            "year": self.year,
+            "journal": self.journal,
+            "citations": self.citation_count,
+            "source": self.source,
+            "doi": self.doi,
+            "direct_url": self.direct_url,
+            "open_access": self.open_access
+        }
+
 class SearchQuery(BaseModel):
     """Academic search query request payload with filter parameters."""
     raw_query: str
