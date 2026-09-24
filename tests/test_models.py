@@ -26,6 +26,9 @@ def test_paper_properties():
     assert paper_with_doi.direct_url == "https://doi.org/10.1093/mind/LIX.236.433"
     assert "artikel rujukan utama" in paper_with_doi.relevance_reasoning
 
+    assert paper_with_doi.authors_summary == "Turing & Lovelace"
+    assert paper_with_doi.year_str == "2024"
+
     paper_without_doi = Paper(
         id="p2",
         title="Theoretical Paper",
@@ -36,6 +39,22 @@ def test_paper_properties():
     
     assert paper_without_doi.has_doi is False
     assert paper_without_doi.primary_author == "Anonymous"
+    assert paper_without_doi.authors_summary == "Anonymous"
+    assert paper_without_doi.year_str == "n.d."
+
+def test_paper_authors_summary_variants():
+    # Single author
+    p1 = Paper(id="1", title="T1", source="S", authors=[Author(name="Grace Hopper")])
+    assert p1.authors_summary == "Hopper"
+
+    # Three authors
+    p3 = Paper(
+        id="3",
+        title="T3",
+        source="S",
+        authors=[Author(name="Grace Hopper"), Author(name="Claude Shannon"), Author(name="John von Neumann")]
+    )
+    assert p3.authors_summary == "Hopper et al."
 
 def test_search_query_defaults():
     query = SearchQuery(raw_query="machine learning")
