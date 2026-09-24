@@ -9,6 +9,13 @@ from literax.synthesis.citation import CitationGenerator
 class PaperCollectionManager:
     """Manages persistent personal paper collections, bookmarks, and formatted exports."""
 
+    SUPPORTED_EXPORT_FORMATS = ["markdown", "csv", "bibtex"]
+
+    @classmethod
+    def is_format_supported(cls, export_format: str) -> bool:
+        """Returns True if the specified export format is supported."""
+        return export_format.lower().strip() in cls.SUPPORTED_EXPORT_FORMATS
+
     def __init__(self, persistence_file: Optional[Path] = None):
         self.persistence_file = persistence_file
         self._collections: Dict[str, List[Paper]] = {}
