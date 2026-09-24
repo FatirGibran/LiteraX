@@ -92,3 +92,16 @@ $$R = 0.35 \cdot S_{\text{semantic}} + 0.25 \cdot S_{\text{bm25}} + 0.15 \cdot S
   }
 ]
 ```
+
+---
+
+## 🎯 4. Boolean Queries and Top-K Truncation
+
+### Boolean Operators
+LiteraX detects explicit Boolean logic operators (`AND`, `OR`, `NOT`) via `QueryNormalizer.is_boolean_query(query)` to selectively handle targeted syntax.
+
+### Priority Sorting and Top-K Limit
+The `RelevanceRanker.rank` function supports:
+- **`priority` parameter**: Prepend results from a preferred database (e.g., `priority="scopus"` or `priority="sinta"`).
+- **`top_k` parameter**: Efficiently truncate results to the desired count of top papers.
+
