@@ -93,3 +93,12 @@ def test_collection_has_paper(tmp_path):
     assert manager.has_paper(user, "10.1234/test.doi") is True
     assert manager.has_paper(user, "p_other") is False
 
+def test_collection_supported_export_formats():
+    assert "markdown" in PaperCollectionManager.SUPPORTED_EXPORT_FORMATS
+    assert "csv" in PaperCollectionManager.SUPPORTED_EXPORT_FORMATS
+    assert "bibtex" in PaperCollectionManager.SUPPORTED_EXPORT_FORMATS
+    assert PaperCollectionManager.is_format_supported("markdown") is True
+    assert PaperCollectionManager.is_format_supported("CSV") is True
+    assert PaperCollectionManager.is_format_supported(" bibtex ") is True
+    assert PaperCollectionManager.is_format_supported("pdf") is False
+
