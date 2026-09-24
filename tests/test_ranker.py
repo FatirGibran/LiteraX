@@ -67,3 +67,17 @@ def test_ranker_priority():
     assert prio_sinta[0].id == "sinta_1"
     assert prio_sinta[1].id == "scopus_1"
 
+def test_ranker_top_k():
+    papers = [
+        Paper(id=f"p_{i}", title=f"AI Paper {i}", source="OpenAlex", year=2020 + i)
+        for i in range(10)
+    ]
+    ranked_all = RelevanceRanker.rank("AI Paper", papers)
+    assert len(ranked_all) == 10
+
+    ranked_top3 = RelevanceRanker.rank("AI Paper", papers, top_k=3)
+    assert len(ranked_top3) == 3
+
+    ranked_top2_priority = RelevanceRanker.rank("AI Paper", papers, priority="scopus", top_k=2)
+    assert len(ranked_top2_priority) == 2
+
