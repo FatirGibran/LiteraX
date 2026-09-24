@@ -125,3 +125,20 @@ def test_collection_filter_source_and_open_access():
     assert len(oa_papers) == 1
     assert oa_papers[0].id == "p1"
 
+def test_collection_get_all_users_and_total_papers():
+    manager = PaperCollectionManager()
+    assert manager.get_all_users() == []
+    assert manager.total_papers_stored == 0
+
+    p1 = Paper(id="p1", title="Title 1", source="Source 1")
+    p2 = Paper(id="p2", title="Title 2", source="Source 2")
+
+    manager.add_paper("user_a", p1)
+    manager.add_paper("user_b", p2)
+
+    users = manager.get_all_users()
+    assert len(users) == 2
+    assert "user_a" in users
+    assert "user_b" in users
+    assert manager.total_papers_stored == 2
+
