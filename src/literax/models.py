@@ -273,6 +273,12 @@ class BrainstormResult(BaseModel):
     def total_ideas(self) -> int:
         return len(self.ideas)
 
+    def get_idea(self, index: int) -> Optional[BrainstormIdea]:
+        """Safely returns brainstorm idea by 0-based index or None if out of range."""
+        if 0 <= index < len(self.ideas):
+            return self.ideas[index]
+        return None
+
 class CitationResponse(BaseModel):
     """Formatted academic citation response across various reference styles."""
     paper_id: str
