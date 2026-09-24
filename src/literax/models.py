@@ -220,6 +220,16 @@ class LiteratureMatrix(BaseModel):
         """Returns the number of rows in the matrix."""
         return len(self.rows)
 
+    def to_markdown(self) -> str:
+        """Renders the matrix into a GitHub-flavored markdown table."""
+        from literax.synthesis.matrix import LiteratureMatrixBuilder
+        return LiteratureMatrixBuilder.to_markdown(self)
+
+    def to_csv(self) -> str:
+        """Renders the matrix into CSV format."""
+        from literax.synthesis.matrix import LiteratureMatrixBuilder
+        return LiteratureMatrixBuilder.to_csv(self)
+
 class ResearchGapItem(BaseModel):
     """Identified research gap or unexplored intersection in current literature."""
     title: str
