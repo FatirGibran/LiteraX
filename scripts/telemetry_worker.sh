@@ -8,8 +8,6 @@
 # Ignore SIGHUP to ensure persistence across SSH logouts
 trap '' HUP
 
-set -e
-
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
 
@@ -67,11 +65,11 @@ while true; do
     echo "$CYCLE" > "$STATE_FILE"
     COMMIT_COUNT="$CYCLE"
 
-    # Stage, commit, and push
-    git pull origin main --rebase || true
-    git add "$LOG_FILE" "$STATE_FILE"
+    # Stage, commit, rebase-pull, and push
+    git add -f "$LOG_FILE" "$STATE_FILE" 2>/dev/null || true
     git commit --author="Fatir Gibran <fatirgibrann@gmail.com>" -m "chore(telemetry): record server status heartbeat #${CYCLE} [${TIMESTAMP}]" || true
-    git push origin main || true
+    git pull origin main --rebase 2>/dev/null || true
+    git push origin main 2>/dev/null || true
 
     if [ "$COMMIT_COUNT" -ge "$MAX_COMMITS" ]; then
         echo "[$(date -u +"%Y-%m-%dT%H:%M:%SZ")] Finished all ${MAX_COMMITS} commits successfully." >> "$LOG_FILE"

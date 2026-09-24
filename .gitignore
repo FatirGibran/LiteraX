@@ -65,6 +65,7 @@ htmlcov/
 *.sqlite-journal
 *.db
 *.log
+!telemetry/*.log
 data/
 downloads/
 pdfs/
