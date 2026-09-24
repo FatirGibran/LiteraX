@@ -1,5 +1,5 @@
 import pytest
-from literax.models import Paper, Author, SearchQuery
+from literax.models import Paper, Author, SearchQuery, ResearchGapItem
 
 def test_paper_properties():
     author1 = Author(name="Alan Turing")
@@ -104,3 +104,24 @@ def test_author_properties():
     author2 = Author(name="Thomas Edison", affiliation=None)
     assert author2.display_name == "Thomas Edison"
     assert author2.has_affiliation is False
+
+def test_research_gap_item_properties():
+    gap1 = ResearchGapItem(
+        title="Scalability in High-Throughput IoT",
+        description="Current models exhibit inference latency exceeding 100ms.",
+        category="Scalability",
+        severity="High",
+        supporting_papers=["paper_1", "paper_2"]
+    )
+    assert gap1.is_high_severity is True
+    assert gap1.supporting_count == 2
+
+    gap2 = ResearchGapItem(
+        title="Dataset Bias in Low-Resource Languages",
+        description="Lack of balanced corpus for regional dialects.",
+        category="Dataset",
+        severity="Medium",
+        supporting_papers=[]
+    )
+    assert gap2.is_high_severity is False
+    assert gap2.supporting_count == 0
