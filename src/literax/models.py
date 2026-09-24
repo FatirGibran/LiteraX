@@ -39,6 +39,16 @@ class Paper(BaseModel):
         return bool(self.doi and self.doi.strip())
 
     @property
+    def has_full_text(self) -> bool:
+        """Returns True if full text URL is available and non-empty."""
+        return bool(self.full_text_url and self.full_text_url.strip())
+
+    @property
+    def has_abstract(self) -> bool:
+        """Returns True if abstract is available and non-empty."""
+        return bool(self.abstract and self.abstract.strip())
+
+    @property
     def primary_author(self) -> str:
         """Returns the name of the first author or 'Anonymous' if empty."""
         return self.authors[0].name if self.authors else "Anonymous"
