@@ -70,3 +70,11 @@ def test_extract_filters():
     assert q9 == "knowledge graph"
     assert f9.get("priority") == "openalex"
 
+def test_is_boolean_query():
+    assert QueryNormalizer.is_boolean_query("machine learning AND robotics") is True
+    assert QueryNormalizer.is_boolean_query("deep learning OR neural networks") is True
+    assert QueryNormalizer.is_boolean_query("crypto NOT bitcoin") is True
+    assert QueryNormalizer.is_boolean_query("machine learning and robotics") is False
+    assert QueryNormalizer.is_boolean_query("just normal query") is False
+    assert QueryNormalizer.is_boolean_query("") is False
+
