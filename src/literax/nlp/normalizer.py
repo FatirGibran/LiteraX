@@ -7,6 +7,12 @@ class QueryNormalizer:
 
     BOOLEAN_OPERATORS = {"AND", "OR", "NOT"}
 
+    @classmethod
+    def is_boolean_query(cls, query: str) -> bool:
+        """Checks if a search query contains explicit uppercase boolean operators (AND, OR, NOT)."""
+        tokens = query.strip().split()
+        return any(t in cls.BOOLEAN_OPERATORS for t in tokens)
+
     @staticmethod
     def clean_whitespace(text: str) -> str:
         """Collapses consecutive whitespace characters into a single space and strips boundaries."""
