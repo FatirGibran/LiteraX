@@ -111,6 +111,15 @@ class PaperCollectionManager:
         """Returns total number of papers saved by a user."""
         return len(self._collections.get(user_id, []))
 
+    def get_all_users(self) -> List[str]:
+        """Returns list of all user IDs with collections."""
+        return list(self._collections.keys())
+
+    @property
+    def total_papers_stored(self) -> int:
+        """Returns the total number of paper entries stored across all users."""
+        return sum(len(papers) for papers in self._collections.values())
+
     def export_collection(self, user_id: str, export_format: str = "markdown") -> str:
         """Exports user's paper collection into Markdown table, CSV, or BibTeX."""
         papers = self.get_papers(user_id)
