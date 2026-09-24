@@ -28,6 +28,13 @@ def test_paper_properties():
 
     assert paper_with_doi.authors_summary == "Turing & Lovelace"
     assert paper_with_doi.year_str == "2024"
+    assert paper_with_doi.has_full_text is False
+    assert paper_with_doi.has_abstract is False
+
+    paper_with_doi.full_text_url = "https://example.com/paper.pdf"
+    paper_with_doi.abstract = "An insightful exploration of computing machinery."
+    assert paper_with_doi.has_full_text is True
+    assert paper_with_doi.has_abstract is True
 
     paper_without_doi = Paper(
         id="p2",
@@ -41,6 +48,8 @@ def test_paper_properties():
     assert paper_without_doi.primary_author == "Anonymous"
     assert paper_without_doi.authors_summary == "Anonymous"
     assert paper_without_doi.year_str == "n.d."
+    assert paper_without_doi.has_full_text is False
+    assert paper_without_doi.has_abstract is False
 
 def test_paper_authors_summary_variants():
     # Single author
