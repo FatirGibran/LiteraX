@@ -26,3 +26,13 @@ def test_unprotected_term():
     mgr = ProtectedTermsManager()
     assert not mgr.is_protected("randomwordxyz123")
     assert not mgr.is_protected("")
+
+def test_get_all_protected_terms():
+    mgr = ProtectedTermsManager()
+    all_terms = mgr.get_all_protected_terms()
+    assert isinstance(all_terms, set)
+    assert len(all_terms) == mgr.total_terms
+    assert "svm" in all_terms
+    # Ensure it returns a copy
+    all_terms.clear()
+    assert mgr.total_terms > 0
