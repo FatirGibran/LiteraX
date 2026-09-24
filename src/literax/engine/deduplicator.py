@@ -105,3 +105,22 @@ class Deduplicator:
                 unique_papers.append(candidate)
 
         return unique_papers
+
+    @classmethod
+    def get_duplicate_clusters(cls, papers: List[Paper], title_threshold: float = DEFAULT_TITLE_SIMILARITY_THRESHOLD) -> List[List[Paper]]:
+        """Groups candidate papers into duplicate clusters for inspection and auditing."""
+        clusters: List[List[Paper]] = []
+
+        for candidate in papers:
+            matched_idx = -1
+            for i, cluster in enumerate(clusters):
+                if cls.are_duplicates(cluster[0], candidate, title_threshold=title_threshold):
+                    matched_idx = i
+                    break
+
+            if matched_idx != -1:
+                clusters[matched_idx].append(candidate)
+            else:
+                clusters.append([candidate])
+
+        return clusters
