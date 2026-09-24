@@ -80,6 +80,15 @@ class PaperCollectionManager:
         """Filters papers in user's collection by publication year."""
         return [p for p in self._collections.get(user_id, []) if p.year == year]
 
+    def filter_by_source(self, user_id: str, source: str) -> List[Paper]:
+        """Filters papers in user's collection by source provider substring."""
+        s = source.lower().strip()
+        return [p for p in self._collections.get(user_id, []) if s in p.source.lower()]
+
+    def filter_open_access(self, user_id: str) -> List[Paper]:
+        """Filters papers in user's collection that have open access status."""
+        return [p for p in self._collections.get(user_id, []) if p.open_access]
+
     def remove_paper(self, user_id: str, paper_id: str) -> bool:
         """Removes a paper by ID or DOI. Returns True if removed, False otherwise."""
         if user_id not in self._collections:
