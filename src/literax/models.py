@@ -165,6 +165,16 @@ class TokenCorrection(BaseModel):
     confidence: float = 1.0
     distance_metric: Optional[str] = None
 
+    @property
+    def is_corrected(self) -> bool:
+        """Returns True if the token was corrected."""
+        return self.status == "CORRECTED"
+
+    @property
+    def is_protected(self) -> bool:
+        """Returns True if the token was recognized as a protected domain term."""
+        return self.status == "PROTECTED"
+
 class CorrectionResult(BaseModel):
     """Overall result of the fuzzy auto-correction pipeline for a search query."""
     original_query: str
